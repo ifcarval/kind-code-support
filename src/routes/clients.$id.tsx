@@ -57,7 +57,7 @@ function ClientDetailsPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-2xl font-bold">{client.nome_razao_social}</h1>
-        <Badge variant={client.status === "ativo" ? "success" : "secondary"}>{client.status}</Badge>
+        <Badge variant={client.status === "ativo" ? "default" : "secondary"}>{client.status}</Badge>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
