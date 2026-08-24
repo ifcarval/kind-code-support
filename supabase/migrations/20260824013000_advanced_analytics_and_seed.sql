@@ -1,6 +1,13 @@
 -- 1. Add Unique Constraints
-ALTER TABLE public.services ADD CONSTRAINT services_company_id_nome_key UNIQUE (company_id, nome);
-ALTER TABLE public.clients ADD CONSTRAINT clients_company_id_cpf_cnpj_key UNIQUE (company_id, cpf_cnpj);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'services_company_id_nome_key') THEN
+        ALTER TABLE public.services ADD CONSTRAINT services_company_id_nome_key UNIQUE (company_id, nome);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'clients_company_id_cpf_cnpj_key') THEN
+        ALTER TABLE public.clients ADD CONSTRAINT clients_company_id_cpf_cnpj_key UNIQUE (company_id, cpf_cnpj);
+    END IF;
+END $$;
 
 -- 2. Advanced Analytics Views
 CREATE OR REPLACE VIEW public.monthly_revenue_history WITH (security_invoker = true) AS
@@ -114,12 +121,13 @@ WHERE i.status = 'pendente'
   AND i.data_vencimento <= current_date + interval '30 days';
 
 -- 3. Demo Data Expansion
-DO 24931
+DO 25165
 DECLARE
     v_company_id UUID;
     v_client_id UUID;
     v_service_id UUID;
     v_invoice_id UUID;
+    v_service_name TEXT;
     i INTEGER;
     v_month_start DATE;
 BEGIN
@@ -139,9 +147,9 @@ BEGIN
         END LOOP;
 
         FOR v_client_id IN (SELECT id FROM public.clients WHERE company_id = v_company_id) LOOP
-            FOR v_service_id IN (SELECT id FROM public.services WHERE company_id = v_company_id ORDER BY random() LIMIT 2) LOOP
-                INSERT INTO public.client_services (company_id, client_id, service_id, valor_mensal, status, data_inicio)
-                VALUES (v_company_id, v_client_id, v_service_id, (SELECT valor_padrao FROM public.services WHERE id = v_service_id), 'ativo', now())
+            FOR v_service_id, v_service_name IN (SELECT id, nome FROM public.services WHERE company_id = v_company_id ORDER BY random() LIMIT 2) LOOP
+                INSERT INTO public.client_services (company_id, client_id, service_id, nome_servico, valor_mensal, status, data_inicio)
+                VALUES (v_company_id, v_client_id, v_service_id, v_service_name, (SELECT valor_padrao FROM public.services WHERE id = v_service_id), 'ativo', now())
                 ON CONFLICT DO NOTHING;
             END LOOP;
         END LOOP;
@@ -158,19 +166,22 @@ BEGIN
                     v_month_start, v_month_start + interval '10 days',
                     CASE WHEN i = 0 THEN 'pendente'::public.invoice_status WHEN random() > 0.2 THEN 'paga'::public.invoice_status ELSE 'vencida'::public.invoice_status END,
                     250.00, 250.00, v_month_start
-                ) RETURNING id INTO v_invoice_id;
+                ) ON CONFLICT (numero_fatura) DO NOTHING
+                RETURNING id INTO v_invoice_id;
 
-                INSERT INTO public.invoice_items (invoice_id, description, quantity, unit_price, total_price)
-                SELECT v_invoice_id, s.nome, 1, cs.valor_mensal, cs.valor_mensal
-                FROM public.client_services cs
-                JOIN public.services s ON cs.service_id = s.id
-                WHERE cs.client_id = v_client_id;
-                
-                INSERT INTO public.payments (company_id, invoice_id, valor_pago, data_pagamento, forma_pagamento)
-                SELECT v_company_id, v_invoice_id, 250.00, v_month_start + interval '10 days', 'transferencia'::public.payment_method
-                FROM public.invoices
-                WHERE id = v_invoice_id AND status = 'paga';
+                IF v_invoice_id IS NOT NULL THEN
+                    INSERT INTO public.invoice_items (invoice_id, description, quantity, unit_price, total_price)
+                    SELECT v_invoice_id, s.nome, 1, cs.valor_mensal, cs.valor_mensal
+                    FROM public.client_services cs
+                    JOIN public.services s ON cs.service_id = s.id
+                    WHERE cs.client_id = v_client_id;
+                    
+                    INSERT INTO public.payments (company_id, invoice_id, valor_pago, data_pagamento, forma_pagamento)
+                    SELECT v_company_id, v_invoice_id, 250.00, v_month_start + interval '10 days', 'transferencia'::public.payment_method
+                    FROM public.invoices
+                    WHERE id = v_invoice_id AND status = 'paga';
+                END IF;
             END LOOP;
         END LOOP;
     END IF;
-END 24931;
+END 25165;
