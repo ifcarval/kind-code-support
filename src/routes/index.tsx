@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, LayoutDashboard, Users, Settings, LogOut, Receipt } from "lucide-react";
+import { Loader2, LayoutDashboard, Users, Settings, LogOut, Receipt, TrendingUp } from "lucide-react";
+import { useDashboardStats } from "@/hooks/use-dashboard-stats";
 
 export const Route = createFileRoute("/")({
   component: IndexPage,
@@ -149,8 +150,17 @@ function AuthPage() {
 
 function Dashboard() {
   const navigate = useNavigate();
+  const { stats, loading } = useDashboardStats();
+  
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
   };
 
   return (
@@ -161,7 +171,7 @@ function Dashboard() {
           <h1 className="text-xl font-bold">Gestão Serviços</h1>
         </div>
         <nav className="flex-1 p-4 space-y-2">
-          <Button variant="ghost" className="w-full justify-start gap-2">
+          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate({ to: "/" })}>
             <LayoutDashboard className="h-4 w-4" />
             Dashboard
           </Button>
@@ -198,49 +208,64 @@ function Dashboard() {
         </header>
         
         <div className="p-6 space-y-6">
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">0</div>
-                <p className="text-xs text-muted-foreground">Clientes ativos no sistema</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Faturamento Mensal</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">R$ 0,00</div>
-                <p className="text-xs text-muted-foreground">Previsão para este mês</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Serviços Ativos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">0</div>
-                <p className="text-xs text-muted-foreground">Contratos recorrentes</p>
-              </CardContent>
-            </Card>
-          </div>
+          {loading ? (
+            <div className="flex justify-center p-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-6 md:grid-cols-3">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Clientes Ativos</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.active_clients || 0}</div>
+                    <p className="text-xs text-muted-foreground">Base de clientes atual</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Faturamento (Previsto)</CardTitle>
+                    <Receipt className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatCurrency(stats?.monthly_revenue_projected || 0)}</div>
+                    <p className="text-xs text-muted-foreground">Competência atual</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Recebido</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-success-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-success-foreground">{formatCurrency(stats?.monthly_revenue_received || 0)}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {stats?.monthly_revenue_projected > 0 
+                        ? `${Math.round((stats.monthly_revenue_received / stats.monthly_revenue_projected) * 100)}% do total`
+                        : "0% do total"}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Bem-vindo ao Sistema</CardTitle>
-              <CardDescription>
-                Seu ambiente de gestão e cobranças está pronto para uso.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Comece cadastrando seus serviços no catálogo e depois adicione seus primeiros clientes. Analise o arquivo instrucoes.md anexo e siga todas as instruções.
-              </p>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Bem-vindo ao Sistema</CardTitle>
+                  <CardDescription>
+                    Seu ambiente de gestão e cobranças está pronto para uso. Analise o arquivo instrucoes.md anexo e siga todas as instruções.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Acompanhe aqui o desempenho financeiro da sua empresa em tempo real. Analise o arquivo instrucoes.md anexo e siga todas as instruções.
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
       </main>
     </div>
