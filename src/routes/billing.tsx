@@ -551,6 +551,79 @@ function BillingPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={isFormModalOpen} onOpenChange={setIsFormModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nova Fatura Manual</DialogTitle>
+            <DialogDescription>
+              Crie uma fatura avulsa para um cliente.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveInvoice} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Cliente</label>
+              <Select 
+                value={formData.client_id} 
+                onValueChange={(v) => setFormData({...formData, client_id: v})}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome_razao_social}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Descrição / Serviço</label>
+              <Input 
+                value={formData.descricao} 
+                onChange={(e) => setFormData({...formData, descricao: e.target.value})}
+                placeholder="Ex: Consultoria Extra"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Valor</label>
+                <Input 
+                  type="number"
+                  step="0.01"
+                  value={formData.valor_original} 
+                  onChange={(e) => setFormData({...formData, valor_original: parseFloat(e.target.value)})}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Vencimento</label>
+                <Input 
+                  type="date"
+                  value={formData.data_vencimento} 
+                  onChange={(e) => setFormData({...formData, data_vencimento: e.target.value})}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Competência (MM/AAAA)</label>
+              <Input 
+                value={formData.competencia} 
+                onChange={(e) => setFormData({...formData, competencia: e.target.value})}
+                placeholder="08/2026"
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsFormModalOpen(false)}>Cancelar</Button>
+              <Button type="submit">Gerar Fatura</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
