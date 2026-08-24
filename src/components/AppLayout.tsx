@@ -22,6 +22,7 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  const { profile, isOwner } = useProfile();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -31,7 +32,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     navigate({ to: "/" });
   };
 
-  const { isOwner } = useProfile();
+  
 
   const allNavItems = [
     { label: "Dashboard", icon: LayoutDashboard, to: "/" },
