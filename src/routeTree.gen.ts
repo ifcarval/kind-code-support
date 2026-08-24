@@ -15,6 +15,7 @@ import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as ContractedServicesRouteImport } from './routes/contracted-services'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as ClientsIdRouteImport } from './routes/clients.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +48,11 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClientsIdRoute = ClientsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/contracted-services': typeof ContractedServicesRoute
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/clients/$id': typeof ClientsIdRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/contracted-services': typeof ContractedServicesRoute
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/clients/$id': typeof ClientsIdRoute
 }
 export interface FileRoutesById {
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   '/contracted-services': typeof ContractedServicesRoute
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/clients/$id': typeof ClientsIdRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +99,7 @@ export interface FileRouteTypes {
     | '/contracted-services'
     | '/services'
     | '/settings'
+    | '/admin/users'
     | '/clients/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/contracted-services'
     | '/services'
     | '/settings'
+    | '/admin/users'
     | '/clients/$id'
   id:
     | '__root__'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/contracted-services'
     | '/services'
     | '/settings'
+    | '/admin/users'
     | '/clients/$id'
   fileRoutesById: FileRoutesById
 }
@@ -118,6 +130,7 @@ export interface RootRouteChildren {
   ContractedServicesRoute: typeof ContractedServicesRoute
   ServicesRoute: typeof ServicesRoute
   SettingsRoute: typeof SettingsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -164,6 +177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/clients/$id': {
       id: '/clients/$id'
       path: '/$id'
@@ -192,6 +212,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContractedServicesRoute: ContractedServicesRoute,
   ServicesRoute: ServicesRoute,
   SettingsRoute: SettingsRoute,
+  AdminUsersRoute: AdminUsersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

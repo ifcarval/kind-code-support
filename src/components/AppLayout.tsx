@@ -13,7 +13,8 @@ import {
   Briefcase,
   ChevronLeft, 
   ChevronRight,
-  Bell
+  Bell,
+  ShieldCheck
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -22,7 +23,7 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { profile, isOwner } = useProfile();
+  const { profile, isOwner, isLifetimeAdmin } = useProfile();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -41,9 +42,14 @@ export function AppLayout({ children }: AppLayoutProps) {
     { label: "Catálogo Serviços", icon: Briefcase, to: "/services", restricted: true },
     { label: "Serviços Contratados", icon: Briefcase, to: "/contracted-services", restricted: true },
     { label: "Configurações", icon: Settings, to: "/settings", restricted: true },
+    { label: "Área Admin", icon: ShieldCheck, to: "/admin/users", adminOnly: true },
   ];
 
-  const navItems = allNavItems.filter(item => !item.restricted || isOwner);
+  const navItems = allNavItems.filter(item => {
+    if (item.adminOnly) return isLifetimeAdmin;
+    if (item.restricted) return isOwner;
+    return true;
+  });
 
   const getPageTitle = () => {
     const current = navItems.find(item => item.to === location.pathname);
@@ -103,7 +109,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 "text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded",
                 isOwner ? "bg-primary/10 text-primary border border-primary/20" : "bg-muted text-muted-foreground border"
               )}>
-                {isOwner ? "Proprietário" : "Usuário Comum"}
+                {isLifetimeAdmin ? "Administrador Vitalício" : isOwner ? "Proprietário" : "Usuário Comum"}
               </span>
             </div>
           </div>

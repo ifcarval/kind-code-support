@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_admins: {
+        Row: {
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       client_services: {
         Row: {
           client_id: string
@@ -1001,6 +1019,7 @@ export type Database = {
       generate_monthly_invoices:
         | { Args: { _target_month: string }; Returns: number }
         | { Args: { p_company_id?: string }; Returns: number }
+      is_lifetime_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_user_role: "owner" | "user"

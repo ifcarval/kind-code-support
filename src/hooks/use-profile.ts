@@ -39,6 +39,10 @@ export function useProfile() {
 
   const isOwner = profile?.role === 'owner';
   const isUser = profile?.role === 'user';
+  
+  // Lifetime admin check based on email or specific company status
+  const isLifetimeAdmin = session?.user?.email === 'igor.felipe76@gmail.com' || profile?.company?.subscription_status === 'vitalicia';
+  const isVitalicia = profile?.company?.subscription_status === 'vitalicia';
 
   return {
     session,
@@ -48,5 +52,7 @@ export function useProfile() {
     isAuthenticated: !!session,
     isOwner,
     isUser,
+    isLifetimeAdmin,
+    isVitalicia,
   };
 }
