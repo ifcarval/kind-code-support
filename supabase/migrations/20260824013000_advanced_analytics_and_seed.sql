@@ -130,6 +130,7 @@ DECLARE
     v_service_record RECORD;
     i INTEGER;
     v_month_start DATE;
+    v_invoice_number TEXT;
 BEGIN
     SELECT id INTO v_company_id FROM public.companies LIMIT 1;
     
@@ -168,19 +169,23 @@ BEGIN
             v_month_start := (date_trunc('month', now()) - (i || ' months')::interval)::date;
             
             FOR v_client_id IN (SELECT id FROM public.clients WHERE company_id = v_company_id) LOOP
-                INSERT INTO public.invoices (
-                    company_id, client_id, numero_fatura, data_emissao, data_vencimento, status, valor_original, valor_final, competencia
-                )
-                VALUES (
-                    v_company_id, v_client_id, 'DEMO-' || to_char(v_month_start, 'YYYYMM') || '-' || substring(v_client_id::text, 1, 4),
-                    v_month_start, v_month_start + interval '10 days',
-                    CASE WHEN i = 0 THEN 'pendente'::public.invoice_status WHEN random() > 0.2 THEN 'paga'::public.invoice_status ELSE 'vencida'::public.invoice_status END,
-                    250.00, 250.00, v_month_start
-                ) ON CONFLICT (numero_fatura) DO NOTHING
-                RETURNING id INTO v_invoice_id;
+                v_invoice_number := 'DEMO-' || to_char(v_month_start, 'YYYYMM') || '-' || substring(v_client_id::text, 1, 4);
+                
+                -- Manual check for conflict since the previous run failed
+                SELECT id INTO v_invoice_id FROM public.invoices WHERE company_id = v_company_id AND numero_fatura = v_invoice_number;
+                
+                IF v_invoice_id IS NULL THEN
+                    INSERT INTO public.invoices (
+                        company_id, client_id, numero_fatura, data_emissao, data_vencimento, status, valor_original, valor_final, competencia
+                    )
+                    VALUES (
+                        v_company_id, v_client_id, v_invoice_number,
+                        v_month_start, v_month_start + interval '10 days',
+                        CASE WHEN i = 0 THEN 'pendente'::public.invoice_status WHEN random() > 0.2 THEN 'paga'::public.invoice_status ELSE 'vencida'::public.invoice_status END,
+                        250.00, 250.00, v_month_start
+                    ) RETURNING id INTO v_invoice_id;
 
-                IF v_invoice_id IS NOT NULL THEN
-                    INSERT INTO public.invoice_items (invoice_id, description, quantity, unit_price, total_price)
+                    INSERT INTO public.invoice_items (invoice_id, descricao, quantidade, valor_unitario, valor_total)
                     SELECT v_invoice_id, s.nome, 1, cs.valor_mensal, cs.valor_mensal
                     FROM public.client_services cs
                     JOIN public.services s ON cs.service_id = s.id
