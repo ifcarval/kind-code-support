@@ -56,7 +56,7 @@ function ServicesPage() {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-lg">{service.nome}</CardTitle>
-                  {getStatusBadge(service.status)}
+                  {getStatusBadge(service.ativo)}
                 </div>
                 <CardDescription className="line-clamp-2">
                   {service.descricao || "Sem descrição disponível."}
@@ -68,10 +68,10 @@ function ServicesPage() {
                     {new Intl.NumberFormat("pt-BR", {
                       style: "currency",
                       currency: "BRL",
-                    }).format(service.preco_base)}
+                    }).format(service.valor_padrao || 0)}
                   </span>
                   <span className="text-sm text-muted-foreground">
-                    / {getPeriodicidadeLabel(service.periodicidade)}
+                    / {getPeriodicidadeLabel(service.tipo_cobranca || "")}
                   </span>
                 </div>
                 
