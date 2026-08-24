@@ -57,6 +57,18 @@ export function useBilling() {
     return { error };
   };
 
+  const generateMonthlyInvoices = async () => {
+    const today = new Date().toISOString().split("T")[0];
+    const { data, error } = await supabase.rpc("generate_monthly_invoices", {
+      _target_month: today,
+    });
+
+    if (!error) {
+      await fetchInvoices();
+    }
+    return { data, error };
+  };
+
   useEffect(() => {
     fetchInvoices();
   }, []);
@@ -66,5 +78,6 @@ export function useBilling() {
     loading,
     fetchInvoices,
     registerPayment,
+    generateMonthlyInvoices,
   };
 }
