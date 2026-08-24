@@ -1,43 +1,14 @@
 /** Analise o arquivo instrucoes.md anexo e siga todas as instruções. */
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Loader2, 
-  LayoutDashboard, 
-  Users, 
-  Settings, 
-  LogOut, 
-  Receipt, 
-  TrendingUp, 
-  ChevronLeft, 
-  ChevronRight,
-  DollarSign,
-  AlertCircle,
-  Clock,
-  Briefcase
-} from "lucide-react";
-import { useDashboardStats } from "@/hooks/use-dashboard-stats";
-import { cn } from "@/lib/utils";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  Legend
-} from "recharts";
+import { Loader2 } from "lucide-react";
+import { AppLayout } from "@/components/AppLayout";
+import { Dashboard } from "@/components/Dashboard";
 
 export const Route = createFileRoute("/")({
   component: IndexPage,
@@ -46,7 +17,6 @@ export const Route = createFileRoute("/")({
 function IndexPage() {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -73,8 +43,13 @@ function IndexPage() {
     return <AuthPage />;
   }
 
-  return <Dashboard />;
+  return (
+    <AppLayout>
+      <Dashboard />
+    </AppLayout>
+  );
 }
+
 
 function AuthPage() {
   const [email, setEmail] = useState("");
