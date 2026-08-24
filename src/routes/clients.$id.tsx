@@ -150,7 +150,7 @@ function ClientDetailsPage() {
                     <TableCell>{formatCurrency(s.valor_mensal)}</TableCell>
                     <TableCell>{format(new Date(s.data_inicio), "dd/MM/yyyy")}</TableCell>
                     <TableCell>
-                      <Badge variant={s.status === 'ativo' ? 'success' : 'secondary'}>{s.status}</Badge>
+                      <Badge variant={s.status === 'ativo' ? 'default' : 'secondary'}>{s.status}</Badge>
                     </TableCell>
                   </TableRow>
                 ))}
