@@ -1,5 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
+import { AppLayout } from "@/components/AppLayout";
+
 import { useBilling } from "@/hooks/use-billing";
 import { useClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
@@ -53,7 +55,7 @@ export const Route = createFileRoute("/billing")({
 });
 
 function BillingPage() {
-  const navigate = useNavigate();
+  
   const { invoices, loading, stats, fetchInvoices, generateMonthlyInvoices, registerPayment, sendInvoiceReminder } = useBilling();
   const { clients } = useClients();
   const { templates } = useNotifications();
@@ -210,6 +212,8 @@ function BillingPage() {
   };
 
   return (
+    <AppLayout>
+
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold flex items-center gap-2">
