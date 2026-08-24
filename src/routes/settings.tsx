@@ -509,7 +509,9 @@ function SettingsPage() {
             </form>
           </DialogContent>
         </Dialog>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
+
 
