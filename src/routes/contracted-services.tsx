@@ -364,7 +364,12 @@ function ContractedServicesPage() {
                         >
                           {loadingManual === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Receipt className="h-4 w-4" />}
                         </Button>
-                        <Button variant="ghost" size="icon" title="Editar">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          title="Editar"
+                          onClick={() => handleOpenForm(s)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button 
