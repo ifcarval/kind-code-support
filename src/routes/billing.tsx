@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useBilling } from "@/hooks/use-billing";
 import { useClients } from "@/hooks/use-clients";
+import { useProfile } from "@/hooks/use-profile";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -57,10 +59,53 @@ function BillingPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [clientFilter, setClientFilter] = useState("todos");
+  const { profile } = useProfile();
   
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [formData, setFormData] = useState<any>({
+    client_id: "",
+    data_vencimento: new Date().toISOString().split('T')[0],
+    valor_original: 0,
+    descricao: "",
+    competencia: format(new Date(), "MM/yyyy")
+  });
+
+  const handleOpenForm = () => {
+    setFormData({
+      client_id: "",
+      data_vencimento: new Date().toISOString().split('T')[0],
+      valor_original: 0,
+      descricao: "",
+      competencia: format(new Date(), "MM/yyyy")
+    });
+    setIsFormModalOpen(true);
+  };
+
+  const handleSaveInvoice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile?.company_id) return;
+
+    const invoiceData = {
+      ...formData,
+      company_id: profile.company_id,
+      valor_final: formData.valor_original,
+      status: 'pendente',
+      numero_fatura: `MAN-${Date.now().toString().slice(-6)}`
+    };
+
+    const { error } = await supabase.from('invoices').insert(invoiceData);
+
+    if (error) {
+      toast.error("Erro ao criar fatura: " + error.message);
+    } else {
+      toast.success("Fatura manual criada com sucesso!");
+      setIsFormModalOpen(false);
+      fetchInvoices();
+    }
+  };
 
   useEffect(() => {
     fetchInvoices({
