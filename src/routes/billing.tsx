@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useBilling } from "@/hooks/use-billing";
 import { useClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
+import { useNotifications } from "@/hooks/use-notifications";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -24,7 +25,8 @@ import {
   Calendar,
   XCircle,
   MoreVertical,
-  Download
+  Download,
+  Bell
 } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -52,8 +54,9 @@ export const Route = createFileRoute("/billing")({
 
 function BillingPage() {
   const navigate = useNavigate();
-  const { invoices, loading, stats, fetchInvoices, generateMonthlyInvoices, registerPayment } = useBilling();
+  const { invoices, loading, stats, fetchInvoices, generateMonthlyInvoices, registerPayment, sendInvoiceReminder } = useBilling();
   const { clients } = useClients();
+  const { templates } = useNotifications();
   
   const [generating, setGenerating] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -64,6 +67,9 @@ function BillingPage() {
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [reminderOpen, setReminderOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [sendingReminder, setSendingReminder] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [formData, setFormData] = useState<any>({
     client_id: "",
@@ -134,6 +140,21 @@ function BillingPage() {
     } else {
       toast.success(`${data} fatura(s) gerada(s) com sucesso!`);
       fetchInvoices();
+    }
+  };
+
+  const handleSendReminder = async () => {
+    if (!selectedInvoice || !selectedTemplate) return;
+    
+    setSendingReminder(true);
+    const result = await sendInvoiceReminder(selectedInvoice.id, selectedTemplate);
+    setSendingReminder(false);
+    
+    if (result.success) {
+      toast.success("Lembrete enviado com sucesso!");
+      setReminderOpen(false);
+    } else {
+      toast.error("Erro ao enviar lembrete: " + result.error);
     }
   };
 
@@ -367,6 +388,16 @@ function BillingPage() {
                               >
                                 <DollarSign className="h-4 w-4" /> Registrar Pagamento
                               </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="gap-2"
+                                onClick={() => {
+                                  setSelectedInvoice(invoice);
+                                  setSelectedTemplate(templates[0]?.id || "");
+                                  setReminderOpen(true);
+                                }}
+                              >
+                                <Bell className="h-4 w-4" /> Enviar Lembrete
+                              </DropdownMenuItem>
                               <DropdownMenuItem className="gap-2">
                                 <Download className="h-4 w-4" /> Baixar PDF
                               </DropdownMenuItem>
@@ -597,7 +628,70 @@ function BillingPage() {
                   onChange={(e) => setFormData({...formData, valor_original: parseFloat(e.target.value)})}
                   required
                 />
-              </div>
+      {/* Modal de Envio de Lembrete */}
+      <Dialog open={reminderOpen} onOpenChange={setReminderOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-primary" />
+              Enviar Lembrete
+            </DialogTitle>
+            <DialogDescription>
+              Selecione um template para enviar ao cliente {selectedInvoice?.client?.nome_razao_social}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Template de Mensagem</label>
+              <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um template" />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map(template => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name} ({template.trigger_type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {selectedTemplate && (
+              <Card className="bg-muted/30">
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Pré-visualização do Conteúdo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="py-2 px-4 text-sm whitespace-pre-wrap italic">
+                  {templates.find(t => t.id === selectedTemplate)?.content
+                    .replace("{cliente}", selectedInvoice?.client?.nome_razao_social || "Cliente")
+                    .replace("{valor}", formatCurrency(selectedInvoice?.valor_final || 0))
+                    .replace("{vencimento}", selectedInvoice?.data_vencimento ? format(new Date(selectedInvoice.data_vencimento), "dd/MM/yyyy") : "")
+                    .replace("{numero}", selectedInvoice?.numero_fatura || "")
+                  }
+                </CardContent>
+              </Card>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReminderOpen(false)}>Cancelar</Button>
+            <Button 
+              onClick={handleSendReminder} 
+              disabled={!selectedTemplate || sendingReminder}
+              className="gap-2"
+            >
+              {sendingReminder ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+              Enviar Lembrete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Vencimento</label>
                 <Input 
