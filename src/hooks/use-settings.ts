@@ -14,6 +14,8 @@ export interface CompanySettings {
   due_day_default?: number;
   currency?: string;
   date_format?: string;
+  auto_reminders_enabled?: boolean;
+  whatsapp_enabled?: boolean;
 }
 
 export interface UserProfile {
@@ -69,7 +71,9 @@ export function useSettings() {
           endereco: rawCompany.endereco,
           due_day_default: rawCompany.due_day_default || 10,
           currency: rawCompany.currency || 'BRL',
-          date_format: rawCompany.date_format || 'DD/MM/YYYY'
+          date_format: rawCompany.date_format || 'DD/MM/YYYY',
+          auto_reminders_enabled: rawCompany.auto_reminders_enabled || false,
+          whatsapp_enabled: rawCompany.whatsapp_enabled || false
         });
       }
     } catch (error: any) {
