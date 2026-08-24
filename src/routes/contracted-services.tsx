@@ -586,7 +586,9 @@ function ContractedServicesPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
+
 
