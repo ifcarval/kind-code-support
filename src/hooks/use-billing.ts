@@ -7,19 +7,69 @@ type PaymentMethod = Database["public"]["Enums"]["payment_method"];
 export function useBilling() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total_pending: 0,
+    total_overdue: 0,
+    total_paid: 0,
+  });
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = async (filters?: {
+    search?: string;
+    status?: string;
+    client_id?: string;
+    date_from?: string;
+    date_to?: string;
+  }) => {
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("invoices")
       .select(`
         *,
-        client:clients(nome_razao_social)
-      `)
-      .order("created_at", { ascending: false });
+        client:clients(nome_razao_social),
+        items:invoice_items(*)
+      `);
+
+    if (filters?.search) {
+      // Busca simplificada por número da fatura ou descrição
+      query = query.or(`numero_fatura.ilike.%${filters.search}%,descricao.ilike.%${filters.search}%`);
+    }
+
+    if (filters?.status && filters.status !== "todos") {
+      query = query.eq("status", filters.status);
+    }
+
+    if (filters?.client_id && filters.client_id !== "todos") {
+      query = query.eq("client_id", filters.client_id);
+    }
+
+    if (filters?.date_from) {
+      query = query.gte("data_vencimento", filters.date_from);
+    }
+
+    if (filters?.date_to) {
+      query = query.lte("data_vencimento", filters.date_to);
+    }
+
+    const { data, error } = await query.order("data_vencimento", { ascending: false });
 
     if (!error) {
       setInvoices(data || []);
+      
+      // Calcular estatísticas básicas baseadas nos dados filtrados ou todos? 
+      // Geralmente indicadores mostram o total geral da empresa.
+      const { data: allStats } = await supabase
+        .from("invoices")
+        .select("status, valor_final");
+      
+      if (allStats) {
+        const summary = allStats.reduce((acc: any, inv: any) => {
+          if (inv.status === 'pendente') acc.total_pending += inv.valor_final;
+          if (inv.status === 'vencida') acc.total_overdue += inv.valor_final;
+          if (inv.status === 'paga') acc.total_paid += inv.valor_final;
+          return acc;
+        }, { total_pending: 0, total_overdue: 0, total_paid: 0 });
+        setStats(summary);
+      }
     }
     setLoading(false);
   };
@@ -76,6 +126,7 @@ export function useBilling() {
   return {
     invoices,
     loading,
+    stats,
     fetchInvoices,
     registerPayment,
     generateMonthlyInvoices,
