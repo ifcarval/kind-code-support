@@ -490,6 +490,98 @@ function ContractedServicesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={isFormModalOpen} onOpenChange={setIsFormModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingContract ? "Editar Contrato" : "Novo Contrato"}</DialogTitle>
+            <DialogDescription>
+              Vincule um serviço a um cliente e defina as condições.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveContract} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Cliente</Label>
+              <Select 
+                value={formData.client_id} 
+                onValueChange={(v) => setFormData({...formData, client_id: v})}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome_razao_social}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Serviço do Catálogo</Label>
+              <Select 
+                value={formData.service_id} 
+                onValueChange={(v) => {
+                  const s = services.find(srv => srv.id === v);
+                  setFormData({
+                    ...formData, 
+                    service_id: v,
+                    valor_mensal: s?.valor_padrao || formData.valor_mensal,
+                    tipo_cobranca: s?.tipo_cobranca || formData.tipo_cobranca
+                  });
+                }}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o serviço" />
+                </SelectTrigger>
+                <SelectContent>
+                  {services.map(s => (
+                    <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Valor Mensal</Label>
+                <Input 
+                  type="number"
+                  step="0.01"
+                  value={formData.valor_mensal} 
+                  onChange={(e) => setFormData({...formData, valor_mensal: parseFloat(e.target.value)})}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Dia Vencimento</Label>
+                <Input 
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={formData.dia_vencimento} 
+                  onChange={(e) => setFormData({...formData, dia_vencimento: parseInt(e.target.value)})}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Data de Início</Label>
+              <Input 
+                type="date"
+                value={formData.data_inicio} 
+                onChange={(e) => setFormData({...formData, data_inicio: e.target.value})}
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsFormModalOpen(false)}>Cancelar</Button>
+              <Button type="submit">Salvar Contrato</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
