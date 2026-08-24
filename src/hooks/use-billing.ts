@@ -60,7 +60,7 @@ export function useBilling() {
   const generateMonthlyInvoices = async () => {
     const today = new Date().toISOString().split("T")[0];
     const { data, error } = await supabase.rpc("generate_monthly_invoices", {
-      _target_month: today,
+      _target_month: today as any,
     });
 
     if (!error) {
