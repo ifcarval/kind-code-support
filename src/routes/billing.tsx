@@ -65,7 +65,7 @@ function BillingPage() {
                 {invoices.map((invoice) => (
                   <TableRow key={invoice.id}>
                     <TableCell className="font-medium">{invoice.numero_fatura}</TableCell>
-                    <TableCell>{invoice.client?.name}</TableCell>
+                    <TableCell>{invoice.client?.nome_razao_social}</TableCell>
                     <TableCell>
                       {format(new Date(invoice.data_vencimento), "dd/MM/yyyy", { locale: ptBR })}
                     </TableCell>
