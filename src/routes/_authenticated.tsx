@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_authenticated")({
 
     if (!session) {
       throw redirect({
-        to: "/auth",
+        to: "/",
         search: {
           redirect: location.href,
         },
@@ -22,7 +22,6 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Sidebar minimalista pode ser adicionada aqui no futuro */}
       <main className="flex-1">
         <Outlet />
       </main>
