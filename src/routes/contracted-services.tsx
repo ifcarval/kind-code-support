@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 
-export const Route = createFileRoute("/contracted-services" as any)({
+export const Route = createFileRoute("/contracted-services")({
   component: ContractedServicesPage,
 });
 
