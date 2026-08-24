@@ -197,8 +197,8 @@ function ClientDetailsPage() {
                   <TableCell>{formatCurrency(inv.valor_final)}</TableCell>
                   <TableCell>
                     <Badge variant={
-                      inv.status === 'paga' ? 'success' : 
-                      inv.status === 'vencida' ? 'destructive' : 'warning'
+                      inv.status === 'paga' ? 'default' : 
+                      inv.status === 'vencida' ? 'destructive' : 'secondary'
                     }>
                       {inv.status}
                     </Badge>
