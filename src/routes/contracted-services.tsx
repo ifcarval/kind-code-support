@@ -222,6 +222,10 @@ function ContractedServicesPage() {
           <Briefcase className="h-6 w-6" />
           Serviços Contratados
         </h1>
+        <Button onClick={() => setIsImportModalOpen(true)} className="gap-2">
+          <FileUp className="h-4 w-4" />
+          Importar Contrato (IA)
+        </Button>
       </div>
 
       <Card>
