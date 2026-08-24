@@ -209,6 +209,7 @@ export type Database = {
       companies: {
         Row: {
           address: string | null
+          auto_reminders_enabled: boolean | null
           cnpj: string | null
           created_at: string | null
           currency: string | null
@@ -220,9 +221,11 @@ export type Database = {
           nome: string
           telefone: string | null
           updated_at: string | null
+          whatsapp_enabled: boolean | null
         }
         Insert: {
           address?: string | null
+          auto_reminders_enabled?: boolean | null
           cnpj?: string | null
           created_at?: string | null
           currency?: string | null
@@ -234,9 +237,11 @@ export type Database = {
           nome: string
           telefone?: string | null
           updated_at?: string | null
+          whatsapp_enabled?: boolean | null
         }
         Update: {
           address?: string | null
+          auto_reminders_enabled?: boolean | null
           cnpj?: string | null
           created_at?: string | null
           currency?: string | null
@@ -248,6 +253,7 @@ export type Database = {
           nome?: string
           telefone?: string | null
           updated_at?: string | null
+          whatsapp_enabled?: boolean | null
         }
         Relationships: []
       }
@@ -305,6 +311,7 @@ export type Database = {
           forma_pagamento: Database["public"]["Enums"]["payment_method"] | null
           id: string
           juros: number | null
+          last_reminder_sent_at: string | null
           multa: number | null
           numero_fatura: string
           observacoes: string | null
@@ -328,6 +335,7 @@ export type Database = {
           forma_pagamento?: Database["public"]["Enums"]["payment_method"] | null
           id?: string
           juros?: number | null
+          last_reminder_sent_at?: string | null
           multa?: number | null
           numero_fatura: string
           observacoes?: string | null
@@ -351,6 +359,7 @@ export type Database = {
           forma_pagamento?: Database["public"]["Enums"]["payment_method"] | null
           id?: string
           juros?: number | null
+          last_reminder_sent_at?: string | null
           multa?: number | null
           numero_fatura?: string
           observacoes?: string | null
@@ -397,6 +406,68 @@ export type Database = {
           },
           {
             foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_revenue_history"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      message_templates: {
+        Row: {
+          company_id: string
+          content: string
+          created_at: string
+          days_offset: number
+          id: string
+          name: string
+          trigger_type: Database["public"]["Enums"]["reminder_trigger_type"]
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          content: string
+          created_at?: string
+          days_offset?: number
+          id?: string
+          name: string
+          trigger_type?: Database["public"]["Enums"]["reminder_trigger_type"]
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          content?: string
+          created_at?: string
+          days_offset?: number
+          id?: string
+          name?: string
+          trigger_type?: Database["public"]["Enums"]["reminder_trigger_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "advanced_dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "message_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "message_templates_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "monthly_revenue_history"
@@ -946,6 +1017,7 @@ export type Database = {
         | "transferencia"
         | "dinheiro"
         | "outro"
+      reminder_trigger_type: "due_soon" | "overdue" | "manual"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1099,6 +1171,7 @@ export const Constants = {
         "dinheiro",
         "outro",
       ],
+      reminder_trigger_type: ["due_soon", "overdue", "manual"],
     },
   },
 } as const
