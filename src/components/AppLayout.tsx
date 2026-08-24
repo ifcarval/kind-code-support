@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useLocation, Outlet } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { useProfile } from "@/hooks/use-profile";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
@@ -30,14 +31,18 @@ export function AppLayout({ children }: AppLayoutProps) {
     navigate({ to: "/" });
   };
 
-  const navItems = [
+  const { isOwner } = useProfile();
+
+  const allNavItems = [
     { label: "Dashboard", icon: LayoutDashboard, to: "/" },
     { label: "Faturamento", icon: Receipt, to: "/billing" },
-    { label: "Clientes", icon: Users, to: "/clients" },
-    { label: "Catálogo Serviços", icon: Briefcase, to: "/services" },
-    { label: "Serviços Contratados", icon: Briefcase, to: "/contracted-services" },
-    { label: "Configurações", icon: Settings, to: "/settings" },
+    { label: "Clientes", icon: Users, to: "/clients", restricted: true },
+    { label: "Catálogo Serviços", icon: Briefcase, to: "/services", restricted: true },
+    { label: "Serviços Contratados", icon: Briefcase, to: "/contracted-services", restricted: true },
+    { label: "Configurações", icon: Settings, to: "/settings", restricted: true },
   ];
+
+  const navItems = allNavItems.filter(item => !item.restricted || isOwner);
 
   const getPageTitle = () => {
     const current = navItems.find(item => item.to === location.pathname);
