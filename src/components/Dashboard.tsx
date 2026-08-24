@@ -36,7 +36,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export function Dashboard() {
-  const { profile } = useProfile();
+  const { profile, isVitalicia } = useProfile();
   const { 
     stats, 
     history, 
@@ -67,7 +67,7 @@ export function Dashboard() {
   return (
     <div className="p-6 space-y-6">
       {/* Trial Banner */}
-      {profile?.company?.trial_ends_at && profile?.company?.subscription_status === 'trial' && (
+      {profile?.company?.trial_ends_at && profile?.company?.subscription_status === 'trial' && !isVitalicia && (
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
