@@ -123,6 +123,19 @@ export function useBilling() {
     fetchInvoices();
   }, []);
 
+  const sendInvoiceReminder = async (invoiceId: string, templateId: string) => {
+    const { sendReminder } = await import("@/lib/notifications.functions");
+    try {
+      const result = await sendReminder({ data: { invoiceId, templateId } });
+      if (result.success) {
+        await fetchInvoices();
+      }
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  };
+
   return {
     invoices,
     loading,
@@ -130,5 +143,6 @@ export function useBilling() {
     fetchInvoices,
     registerPayment,
     generateMonthlyInvoices,
+    sendInvoiceReminder,
   };
 }
