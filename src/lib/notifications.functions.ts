@@ -45,7 +45,8 @@ export const sendReminder = createServerFn({ method: "POST" })
     };
 
     Object.keys(replacements).forEach((tag) => {
-      content = content.replace(new RegExp(tag, "g"), replacements[tag]);
+      const value = replacements[tag] || "";
+      content = content.split(tag).join(value);
     });
 
     // 4. Simular envio (em um cenário real, chamaria API do WhatsApp ou E-mail)
