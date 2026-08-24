@@ -35,7 +35,7 @@ export function useBilling() {
     }
 
     if (filters?.status && filters.status !== "todos") {
-      query = query.eq("status", filters.status);
+      query = query.eq("status", filters.status as any);
     }
 
     if (filters?.client_id && filters.client_id !== "todos") {
