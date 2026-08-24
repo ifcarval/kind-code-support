@@ -55,6 +55,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [role, setRole] = useState<"owner" | "user">("owner");
   const { toast } = useToast();
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -66,6 +67,12 @@ function AuthPage() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              role: role,
+              nome: email.split("@")[0], // Fallback name
+            }
+          }
         });
         if (error) throw error;
         
@@ -113,6 +120,29 @@ function AuthPage() {
         </CardHeader>
         <form onSubmit={handleAuth}>
           <CardContent className="space-y-4">
+            {isSignUp && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Perfil</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button
+                    type="button"
+                    variant={role === "owner" ? "default" : "outline"}
+                    onClick={() => setRole("owner")}
+                    className="w-full"
+                  >
+                    Proprietário
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={role === "user" ? "default" : "outline"}
+                    onClick={() => setRole("user")}
+                    className="w-full"
+                  >
+                    Usuário comum
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="email">
                 E-mail

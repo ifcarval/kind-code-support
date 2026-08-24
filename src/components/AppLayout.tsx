@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useLocation, Outlet } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { useProfile } from "@/hooks/use-profile";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
@@ -21,6 +22,7 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  const { profile, isOwner } = useProfile();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -30,14 +32,18 @@ export function AppLayout({ children }: AppLayoutProps) {
     navigate({ to: "/" });
   };
 
-  const navItems = [
+  
+
+  const allNavItems = [
     { label: "Dashboard", icon: LayoutDashboard, to: "/" },
     { label: "Faturamento", icon: Receipt, to: "/billing" },
-    { label: "Clientes", icon: Users, to: "/clients" },
-    { label: "Catálogo Serviços", icon: Briefcase, to: "/services" },
-    { label: "Serviços Contratados", icon: Briefcase, to: "/contracted-services" },
-    { label: "Configurações", icon: Settings, to: "/settings" },
+    { label: "Clientes", icon: Users, to: "/clients", restricted: true },
+    { label: "Catálogo Serviços", icon: Briefcase, to: "/services", restricted: true },
+    { label: "Serviços Contratados", icon: Briefcase, to: "/contracted-services", restricted: true },
+    { label: "Configurações", icon: Settings, to: "/settings", restricted: true },
   ];
+
+  const navItems = allNavItems.filter(item => !item.restricted || isOwner);
 
   const getPageTitle = () => {
     const current = navItems.find(item => item.to === location.pathname);
@@ -90,7 +96,17 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 border-b flex items-center justify-between px-6 bg-card shrink-0 sticky top-0 z-10">
-          <h2 className="text-lg font-semibold truncate">{getPageTitle()}</h2>
+          <div className="flex flex-col">
+            <h2 className="text-lg font-semibold truncate leading-tight">{getPageTitle()}</h2>
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded",
+                isOwner ? "bg-primary/10 text-primary border border-primary/20" : "bg-muted text-muted-foreground border"
+              )}>
+                {isOwner ? "Proprietário" : "Usuário Comum"}
+              </span>
+            </div>
+          </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <Button variant="ghost" size="icon" className="h-8 w-8 relative">
@@ -98,7 +114,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full border-2 border-card"></span>
             </Button>
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
-              <span className="text-xs font-medium">U</span>
+              <span className="text-xs font-medium">{profile?.nome?.[0]?.toUpperCase() || "U"}</span>
             </div>
           </div>
         </header>

@@ -25,12 +25,18 @@ import {
   Cell,
   Legend
 } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
+import { useProfile } from "@/hooks/use-profile";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
 export function Dashboard() {
+  const { profile } = useProfile();
   const { 
     stats, 
     history, 
@@ -41,6 +47,7 @@ export function Dashboard() {
     upcomingDates, 
     loading 
   } = useDashboardStats();
+
   
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -59,6 +66,28 @@ export function Dashboard() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Trial Banner */}
+      {profile?.company?.trial_ends_at && profile?.company?.subscription_status === 'trial' && (
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-full">
+                  <Clock className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-primary">Período de Demonstração Ativo</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Seu acesso expira em {format(new Date(profile.company.trial_ends_at), "dd 'de' MMMM", { locale: ptBR })}.
+                  </p>
+                </div>
+              </div>
+              <Button size="sm">Assinar Agora</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Top Stats Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>

@@ -219,7 +219,9 @@ export type Database = {
           endereco: string | null
           id: string
           nome: string
+          subscription_status: string | null
           telefone: string | null
+          trial_ends_at: string | null
           updated_at: string | null
           whatsapp_enabled: boolean | null
         }
@@ -235,7 +237,9 @@ export type Database = {
           endereco?: string | null
           id?: string
           nome: string
+          subscription_status?: string | null
           telefone?: string | null
+          trial_ends_at?: string | null
           updated_at?: string | null
           whatsapp_enabled?: boolean | null
         }
@@ -251,7 +255,9 @@ export type Database = {
           endereco?: string | null
           id?: string
           nome?: string
+          subscription_status?: string | null
           telefone?: string | null
+          trial_ends_at?: string | null
           updated_at?: string | null
           whatsapp_enabled?: boolean | null
         }
@@ -558,6 +564,7 @@ export type Database = {
           full_name: string | null
           id: string
           nome: string
+          role: Database["public"]["Enums"]["app_user_role"] | null
           telefone: string | null
           updated_at: string | null
         }
@@ -571,6 +578,7 @@ export type Database = {
           full_name?: string | null
           id: string
           nome: string
+          role?: Database["public"]["Enums"]["app_user_role"] | null
           telefone?: string | null
           updated_at?: string | null
         }
@@ -584,6 +592,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           nome?: string
+          role?: Database["public"]["Enums"]["app_user_role"] | null
           telefone?: string | null
           updated_at?: string | null
         }
@@ -994,6 +1003,7 @@ export type Database = {
         | { Args: { p_company_id?: string }; Returns: number }
     }
     Enums: {
+      app_user_role: "owner" | "user"
       billing_type:
         | "mensal"
         | "trimestral"
@@ -1145,6 +1155,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_user_role: ["owner", "user"],
       billing_type: [
         "mensal",
         "trimestral",

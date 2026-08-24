@@ -5,7 +5,7 @@ import { useContractedServices } from "@/hooks/use-contracted-services";
 import { useClients } from "@/hooks/use-clients";
 import { useServices } from "@/hooks/use-services";
 import { useProfile } from "@/hooks/use-profile";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,29 @@ function ContractedServicesPage() {
   
   const { clients } = useClients();
   const { services } = useServices();
-  const { profile } = useProfile();
+  const { profile, isOwner, isLoading: profileLoading } = useProfile();
+  
+  if (!profileLoading && !isOwner) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-[calc(100vh-64px)] p-6">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <CardTitle className="text-destructive flex justify-center mb-2">Acesso Negado</CardTitle>
+              <CardDescription>
+                Você não tem permissão para acessar os serviços contratados. 
+                Esta página é restrita a proprietários.
+              </CardDescription>
+            </CardHeader>
+            <CardFooter className="justify-center">
+              <Button onClick={() => window.location.href = "/"}>Voltar ao Início</Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
   
   const [searchTerm, setSearchTerm] = useState("");
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
