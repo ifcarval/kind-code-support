@@ -35,7 +35,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     { label: "Faturamento", icon: Receipt, to: "/billing" },
     { label: "Clientes", icon: Users, to: "/clients" },
     { label: "Catálogo Serviços", icon: Briefcase, to: "/services" },
-    { label: "Serviços Contratados", icon: Receipt, to: "/contracted-services" },
+    { label: "Serviços Contratados", icon: Briefcase, to: "/contracted-services" },
     { label: "Configurações", icon: Settings, to: "/settings" },
   ];
 
