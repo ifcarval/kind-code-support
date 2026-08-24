@@ -54,6 +54,13 @@ export function useContractedServices() {
     return updateContractedService(id, { status: 'ativo' });
   };
 
+  const generateManualInvoice = async (contractId: string) => {
+    const { data, error } = await supabase.rpc("generate_manual_invoice_from_contract", {
+      _contract_id: contractId
+    });
+    return { data, error };
+  };
+
   useEffect(() => {
     fetchContractedServices();
   }, []);
@@ -66,5 +73,6 @@ export function useContractedServices() {
     cancelContract,
     pauseContract,
     reactivateContract,
+    generateManualInvoice,
   };
 }

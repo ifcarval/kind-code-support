@@ -31,7 +31,8 @@ function ContractedServicesPage() {
     loading, 
     pauseContract, 
     reactivateContract, 
-    cancelContract 
+    cancelContract,
+    generateManualInvoice
   } = useContractedServices();
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -69,6 +70,15 @@ function ContractedServicesPage() {
     }
   };
 
+  const handleManualInvoice = async (id: string) => {
+    setLoadingManual(id);
+    const { error } = await generateManualInvoice(id);
+    setLoadingManual(null);
+    
+    if (error) toast.error("Erro ao gerar fatura: " + error.message);
+    else toast.success("Fatura manual gerada com sucesso.");
+  };
+
   const calculateNextBilling = (day: number | null) => {
     if (!day) return "N/A";
     const today = new Date();
@@ -76,6 +86,8 @@ function ContractedServicesPage() {
     if (next < today) next = addMonths(next, 1);
     return format(next, "dd/MM/yyyy");
   };
+
+  const [loadingManual, setLoadingManual] = useState<string | null>(null);
 
   const filteredServices = contractedServices.filter(s => 
     s.client?.nome_razao_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -151,8 +163,14 @@ function ContractedServicesPage() {
                             <Play className="h-4 w-4" />
                           </Button>
                         ) : null}
-                        <Button variant="ghost" size="icon" title="Gerar Cobrança Manual">
-                          <Receipt className="h-4 w-4" />
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          title="Gerar Cobrança Manual" 
+                          onClick={() => handleManualInvoice(s.id)}
+                          disabled={loadingManual === s.id}
+                        >
+                          {loadingManual === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Receipt className="h-4 w-4" />}
                         </Button>
                         <Button variant="ghost" size="icon" title="Editar">
                           <Edit className="h-4 w-4" />
