@@ -37,11 +37,16 @@ export function useProfile() {
     },
   });
 
+  const isOwner = profile?.role === 'owner';
+  const isUser = profile?.role === 'user';
+
   return {
     session,
     profile,
     isLoading,
     refetch,
     isAuthenticated: !!session,
+    isOwner,
+    isUser,
   };
 }
