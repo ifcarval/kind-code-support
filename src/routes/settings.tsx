@@ -1,5 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
+import { AppLayout } from "@/components/AppLayout";
+
 import { useSettings } from "@/hooks/use-settings";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -53,8 +55,8 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
-  const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
   const { company, profile, loading, updateProfile, updateCompany } = useSettings();
   const { templates, saveTemplate, deleteTemplate } = useNotifications();
   const { toast } = useToast();
@@ -130,10 +132,6 @@ function SettingsPage() {
     setIsTemplateModalOpen(false);
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate({ to: "/" });
-  };
 
   const onUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,6 +167,8 @@ function SettingsPage() {
   }
 
   return (
+    <AppLayout>
+
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold flex items-center gap-2">
