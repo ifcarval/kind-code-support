@@ -1,6 +1,8 @@
--- Advanced Analytics Views (Fixed for Actual Schema - Step 7)
+-- 1. Add Unique Constraints
+ALTER TABLE public.services ADD CONSTRAINT services_company_id_nome_key UNIQUE (company_id, nome);
+ALTER TABLE public.clients ADD CONSTRAINT clients_company_id_cpf_cnpj_key UNIQUE (company_id, cpf_cnpj);
 
--- 1. Monthly Revenue History (Last 12 months)
+-- 2. Advanced Analytics Views
 CREATE OR REPLACE VIEW public.monthly_revenue_history WITH (security_invoker = true) AS
 WITH months AS (
     SELECT date_trunc('month', generate_series(
@@ -31,7 +33,6 @@ SELECT
 FROM company_months cm
 LEFT JOIN revenue r ON cm.company_id = r.company_id AND cm.month = r.month;
 
--- 2. Billing Status Distribution
 CREATE OR REPLACE VIEW public.billing_status_distribution WITH (security_invoker = true) AS
 SELECT 
     company_id,
@@ -41,7 +42,6 @@ SELECT
 FROM public.invoices
 GROUP BY company_id, status;
 
--- 3. Top Clients by Revenue
 CREATE OR REPLACE VIEW public.top_clients_revenue WITH (security_invoker = true) AS
 SELECT 
     i.company_id,
@@ -54,7 +54,6 @@ JOIN public.clients c ON i.client_id = c.id
 GROUP BY i.company_id, c.nome_razao_social
 ORDER BY total_projected DESC;
 
--- 4. Profitable Services
 CREATE OR REPLACE VIEW public.profitable_services WITH (security_invoker = true) AS
 SELECT 
     s.company_id,
@@ -67,7 +66,6 @@ WHERE cs.status = 'ativo'
 GROUP BY s.company_id, s.nome
 ORDER BY monthly_revenue DESC;
 
--- 5. Delinquent Clients (Inadimplentes)
 CREATE OR REPLACE VIEW public.delinquent_clients WITH (security_invoker = true) AS
 SELECT 
     c.company_id,
@@ -80,7 +78,6 @@ WHERE i.status = 'vencida'
 GROUP BY c.company_id, c.nome_razao_social
 HAVING COUNT(i.id) > 0;
 
--- 6. Advanced Stats (Ticket Médio, Delinquency Rate)
 CREATE OR REPLACE VIEW public.advanced_dashboard_stats WITH (security_invoker = true) AS
 SELECT 
     c.id as company_id,
@@ -102,7 +99,6 @@ SELECT
     ) as total_overdue_amount
 FROM public.companies c;
 
--- 7. Upcoming Due Dates
 CREATE OR REPLACE VIEW public.upcoming_due_dates WITH (security_invoker = true) AS
 SELECT 
     i.company_id,
@@ -117,8 +113,8 @@ WHERE i.status = 'pendente'
   AND i.data_vencimento >= current_date 
   AND i.data_vencimento <= current_date + interval '30 days';
 
--- Demo Data Expansion (Fixed for Actual Schema and Enums)
-DO 24669
+-- 3. Demo Data Expansion
+DO 24931
 DECLARE
     v_company_id UUID;
     v_client_id UUID;
@@ -127,25 +123,21 @@ DECLARE
     i INTEGER;
     v_month_start DATE;
 BEGIN
-    -- Get the first company
     SELECT id INTO v_company_id FROM public.companies LIMIT 1;
     
     IF v_company_id IS NOT NULL THEN
-        -- Create more services (Total 8)
         FOR i IN 1..8 LOOP
             INSERT INTO public.services (company_id, nome, descricao, valor_padrao, recorrente, ativo)
             VALUES (v_company_id, 'Serviço Premium ' || i, 'Descrição do serviço ' || i, 150.00 * i, true, true)
             ON CONFLICT (company_id, nome) DO NOTHING;
         END LOOP;
 
-        -- Ensure 10 clients
         FOR i IN 1..10 LOOP
             INSERT INTO public.clients (company_id, nome_razao_social, email, cpf_cnpj, telefone)
             VALUES (v_company_id, 'Cliente Fictício ' || i, 'cliente' || i || '@exemplo.com', '1234567890' || i, '119999999' || i)
             ON CONFLICT (company_id, cpf_cnpj) DO NOTHING;
         END LOOP;
 
-        -- Link services to clients
         FOR v_client_id IN (SELECT id FROM public.clients WHERE company_id = v_company_id) LOOP
             FOR v_service_id IN (SELECT id FROM public.services WHERE company_id = v_company_id ORDER BY random() LIMIT 2) LOOP
                 INSERT INTO public.client_services (company_id, client_id, service_id, valor_mensal, status, data_inicio)
@@ -154,47 +146,26 @@ BEGIN
             END LOOP;
         END LOOP;
 
-        -- Generate 12 months of history
         FOR i IN 0..11 LOOP
             v_month_start := (date_trunc('month', now()) - (i || ' months')::interval)::date;
             
             FOR v_client_id IN (SELECT id FROM public.clients WHERE company_id = v_company_id) LOOP
-                -- Create invoice
                 INSERT INTO public.invoices (
-                    company_id, 
-                    client_id, 
-                    numero_fatura, 
-                    data_emissao, 
-                    data_vencimento, 
-                    status, 
-                    valor_original, 
-                    valor_final,
-                    competencia
+                    company_id, client_id, numero_fatura, data_emissao, data_vencimento, status, valor_original, valor_final, competencia
                 )
                 VALUES (
-                    v_company_id, 
-                    v_client_id, 
-                    'DEMO-' || to_char(v_month_start, 'YYYYMM') || '-' || substring(v_client_id::text, 1, 4),
-                    v_month_start,
-                    v_month_start + interval '10 days',
-                    CASE 
-                        WHEN i = 0 THEN 'pendente'::public.invoice_status
-                        WHEN random() > 0.2 THEN 'paga'::public.invoice_status
-                        ELSE 'vencida'::public.invoice_status
-                    END,
-                    250.00,
-                    250.00,
-                    v_month_start
+                    v_company_id, v_client_id, 'DEMO-' || to_char(v_month_start, 'YYYYMM') || '-' || substring(v_client_id::text, 1, 4),
+                    v_month_start, v_month_start + interval '10 days',
+                    CASE WHEN i = 0 THEN 'pendente'::public.invoice_status WHEN random() > 0.2 THEN 'paga'::public.invoice_status ELSE 'vencida'::public.invoice_status END,
+                    250.00, 250.00, v_month_start
                 ) RETURNING id INTO v_invoice_id;
 
-                -- Add items to invoice
                 INSERT INTO public.invoice_items (invoice_id, description, quantity, unit_price, total_price)
                 SELECT v_invoice_id, s.nome, 1, cs.valor_mensal, cs.valor_mensal
                 FROM public.client_services cs
                 JOIN public.services s ON cs.service_id = s.id
                 WHERE cs.client_id = v_client_id;
                 
-                -- Record payment for paid invoices
                 INSERT INTO public.payments (company_id, invoice_id, valor_pago, data_pagamento, forma_pagamento)
                 SELECT v_company_id, v_invoice_id, 250.00, v_month_start + interval '10 days', 'transferencia'::public.payment_method
                 FROM public.invoices
@@ -202,4 +173,4 @@ BEGIN
             END LOOP;
         END LOOP;
     END IF;
-END 24669;
+END 24931;
