@@ -148,6 +148,7 @@ function AuthPage() {
 }
 
 function Dashboard() {
+  const navigate = useNavigate();
   const handleSignOut = async () => {
     await supabase.auth.signOut();
   };
