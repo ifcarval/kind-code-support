@@ -720,10 +720,11 @@ function BillingPage() {
           </form>
         </DialogContent>
       </Dialog>
-      </AppLayout>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
+
 
 
 // Helper function for class merging
