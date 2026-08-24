@@ -319,7 +319,9 @@ function ClientsPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
+
 
