@@ -14,16 +14,503 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      client_services: {
+        Row: {
+          client_id: string
+          company_id: string
+          created_at: string | null
+          data_fim: string | null
+          data_inicio: string
+          descricao: string | null
+          dia_vencimento: number | null
+          id: string
+          nome_servico: string
+          observacoes: string | null
+          renovacao_automatica: boolean | null
+          service_id: string
+          status: Database["public"]["Enums"]["client_service_status"] | null
+          tipo_cobranca: Database["public"]["Enums"]["billing_type"]
+          updated_at: string | null
+          valor_mensal: number
+        }
+        Insert: {
+          client_id: string
+          company_id: string
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio: string
+          descricao?: string | null
+          dia_vencimento?: number | null
+          id?: string
+          nome_servico: string
+          observacoes?: string | null
+          renovacao_automatica?: boolean | null
+          service_id: string
+          status?: Database["public"]["Enums"]["client_service_status"] | null
+          tipo_cobranca: Database["public"]["Enums"]["billing_type"]
+          updated_at?: string | null
+          valor_mensal: number
+        }
+        Update: {
+          client_id?: string
+          company_id?: string
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string
+          descricao?: string | null
+          dia_vencimento?: number | null
+          id?: string
+          nome_servico?: string
+          observacoes?: string | null
+          renovacao_automatica?: boolean | null
+          service_id?: string
+          status?: Database["public"]["Enums"]["client_service_status"] | null
+          tipo_cobranca?: Database["public"]["Enums"]["billing_type"]
+          updated_at?: string | null
+          valor_mensal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_services_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_services_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          cep: string | null
+          cidade: string | null
+          company_id: string
+          contato_principal: string | null
+          cpf_cnpj: string | null
+          created_at: string | null
+          email: string | null
+          endereco: string | null
+          estado: string | null
+          id: string
+          nome_fantasia: string | null
+          nome_razao_social: string
+          observacoes: string | null
+          status: Database["public"]["Enums"]["client_status"] | null
+          telefone: string | null
+          telefone_secundario: string | null
+          tipo_pessoa: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cep?: string | null
+          cidade?: string | null
+          company_id: string
+          contato_principal?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome_fantasia?: string | null
+          nome_razao_social: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["client_status"] | null
+          telefone?: string | null
+          telefone_secundario?: string | null
+          tipo_pessoa?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cep?: string | null
+          cidade?: string | null
+          company_id?: string
+          contato_principal?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome_fantasia?: string | null
+          nome_razao_social?: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["client_status"] | null
+          telefone?: string | null
+          telefone_secundario?: string | null
+          tipo_pessoa?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      companies: {
+        Row: {
+          cnpj: string | null
+          created_at: string | null
+          email: string | null
+          endereco: string | null
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      invoice_items: {
+        Row: {
+          created_at: string | null
+          descricao: string
+          id: string
+          invoice_id: string
+          quantidade: number | null
+          valor_total: number
+          valor_unitario: number
+        }
+        Insert: {
+          created_at?: string | null
+          descricao: string
+          id?: string
+          invoice_id: string
+          quantidade?: number | null
+          valor_total: number
+          valor_unitario: number
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string
+          id?: string
+          invoice_id?: string
+          quantidade?: number | null
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          client_id: string
+          client_service_id: string | null
+          company_id: string
+          competencia: string
+          comprovante_url: string | null
+          created_at: string | null
+          data_emissao: string | null
+          data_pagamento: string | null
+          data_vencimento: string
+          desconto: number | null
+          descricao: string | null
+          forma_pagamento: Database["public"]["Enums"]["payment_method"] | null
+          id: string
+          juros: number | null
+          multa: number | null
+          numero_fatura: string
+          observacoes: string | null
+          status: Database["public"]["Enums"]["invoice_status"] | null
+          updated_at: string | null
+          valor_final: number
+          valor_original: number
+        }
+        Insert: {
+          client_id: string
+          client_service_id?: string | null
+          company_id: string
+          competencia: string
+          comprovante_url?: string | null
+          created_at?: string | null
+          data_emissao?: string | null
+          data_pagamento?: string | null
+          data_vencimento: string
+          desconto?: number | null
+          descricao?: string | null
+          forma_pagamento?: Database["public"]["Enums"]["payment_method"] | null
+          id?: string
+          juros?: number | null
+          multa?: number | null
+          numero_fatura: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"] | null
+          updated_at?: string | null
+          valor_final: number
+          valor_original: number
+        }
+        Update: {
+          client_id?: string
+          client_service_id?: string | null
+          company_id?: string
+          competencia?: string
+          comprovante_url?: string | null
+          created_at?: string | null
+          data_emissao?: string | null
+          data_pagamento?: string | null
+          data_vencimento?: string
+          desconto?: number | null
+          descricao?: string | null
+          forma_pagamento?: Database["public"]["Enums"]["payment_method"] | null
+          id?: string
+          juros?: number | null
+          multa?: number | null
+          numero_fatura?: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"] | null
+          updated_at?: string | null
+          valor_final?: number
+          valor_original?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_client_service_id_fkey"
+            columns: ["client_service_id"]
+            isOneToOne: false
+            referencedRelation: "client_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          data_pagamento: string | null
+          forma_pagamento: Database["public"]["Enums"]["payment_method"]
+          id: string
+          invoice_id: string
+          observacoes: string | null
+          referencia_pagamento: string | null
+          valor_pago: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          data_pagamento?: string | null
+          forma_pagamento: Database["public"]["Enums"]["payment_method"]
+          id?: string
+          invoice_id: string
+          observacoes?: string | null
+          referencia_pagamento?: string | null
+          valor_pago: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          data_pagamento?: string | null
+          forma_pagamento?: Database["public"]["Enums"]["payment_method"]
+          id?: string
+          invoice_id?: string
+          observacoes?: string | null
+          referencia_pagamento?: string | null
+          valor_pago?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          cargo: string | null
+          company_id: string | null
+          created_at: string | null
+          email: string
+          empresa: string | null
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          cargo?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          email: string
+          empresa?: string | null
+          id: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          cargo?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          email?: string
+          empresa?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          ativo: boolean | null
+          categoria: string | null
+          company_id: string
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          recorrente: boolean | null
+          tipo_cobranca: Database["public"]["Enums"]["billing_type"] | null
+          updated_at: string | null
+          valor_padrao: number | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria?: string | null
+          company_id: string
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          recorrente?: boolean | null
+          tipo_cobranca?: Database["public"]["Enums"]["billing_type"] | null
+          updated_at?: string | null
+          valor_padrao?: number | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: string | null
+          company_id?: string
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          recorrente?: boolean | null
+          tipo_cobranca?: Database["public"]["Enums"]["billing_type"] | null
+          updated_at?: string | null
+          valor_padrao?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_monthly_invoices: {
+        Args: { p_company_id?: string }
+        Returns: number
+      }
     }
     Enums: {
-      [_ in never]: never
+      billing_type:
+        | "mensal"
+        | "trimestral"
+        | "semestral"
+        | "anual"
+        | "avulsa"
+        | "personalizada"
+      client_service_status: "ativo" | "pausado" | "cancelado" | "finalizado"
+      client_status: "ativo" | "inativo" | "bloqueado"
+      invoice_status:
+        | "rascunho"
+        | "pendente"
+        | "vencida"
+        | "paga"
+        | "cancelada"
+        | "renegociada"
+      payment_method:
+        | "pix"
+        | "boleto"
+        | "cartao"
+        | "transferencia"
+        | "dinheiro"
+        | "outro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +637,33 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      billing_type: [
+        "mensal",
+        "trimestral",
+        "semestral",
+        "anual",
+        "avulsa",
+        "personalizada",
+      ],
+      client_service_status: ["ativo", "pausado", "cancelado", "finalizado"],
+      client_status: ["ativo", "inativo", "bloqueado"],
+      invoice_status: [
+        "rascunho",
+        "pendente",
+        "vencida",
+        "paga",
+        "cancelada",
+        "renegociada",
+      ],
+      payment_method: [
+        "pix",
+        "boleto",
+        "cartao",
+        "transferencia",
+        "dinheiro",
+        "outro",
+      ],
+    },
   },
 } as const
