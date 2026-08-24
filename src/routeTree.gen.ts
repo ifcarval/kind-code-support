@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as ClientsRouteImport } from './routes/clients'
+import { Route as ContractedServicesRouteImport } from './routes/contracted-services'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as ClientsIdRouteImport } from './routes/clients.$id'
 
@@ -30,6 +31,11 @@ const ClientsRoute = ClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContractedServicesRoute = ContractedServicesRouteImport.update({
+  id: '/contracted-services',
+  path: '/contracted-services',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
   path: '/services',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/billing': typeof BillingRoute
   '/clients': typeof ClientsRouteWithChildren
+  '/contracted-services': typeof ContractedServicesRoute
   '/services': typeof ServicesRoute
   '/clients/$id': typeof ClientsIdRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/billing': typeof BillingRoute
   '/clients': typeof ClientsRouteWithChildren
+  '/contracted-services': typeof ContractedServicesRoute
   '/services': typeof ServicesRoute
   '/clients/$id': typeof ClientsIdRoute
 }
@@ -60,21 +68,42 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/billing': typeof BillingRoute
   '/clients': typeof ClientsRouteWithChildren
+  '/contracted-services': typeof ContractedServicesRoute
   '/services': typeof ServicesRoute
   '/clients/$id': typeof ClientsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/billing' | '/clients' | '/services' | '/clients/$id'
+  fullPaths:
+    | '/'
+    | '/billing'
+    | '/clients'
+    | '/contracted-services'
+    | '/services'
+    | '/clients/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/billing' | '/clients' | '/services' | '/clients/$id'
-  id: '__root__' | '/' | '/billing' | '/clients' | '/services' | '/clients/$id'
+  to:
+    | '/'
+    | '/billing'
+    | '/clients'
+    | '/contracted-services'
+    | '/services'
+    | '/clients/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/billing'
+    | '/clients'
+    | '/contracted-services'
+    | '/services'
+    | '/clients/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BillingRoute: typeof BillingRoute
   ClientsRoute: typeof ClientsRouteWithChildren
+  ContractedServicesRoute: typeof ContractedServicesRoute
   ServicesRoute: typeof ServicesRoute
 }
 
@@ -99,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/clients'
       fullPath: '/clients'
       preLoaderRoute: typeof ClientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contracted-services': {
+      id: '/contracted-services'
+      path: '/contracted-services'
+      fullPath: '/contracted-services'
+      preLoaderRoute: typeof ContractedServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/services': {
@@ -133,6 +169,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BillingRoute: BillingRoute,
   ClientsRoute: ClientsRouteWithChildren,
+  ContractedServicesRoute: ContractedServicesRoute,
   ServicesRoute: ServicesRoute,
 }
 export const routeTree = rootRouteImport
