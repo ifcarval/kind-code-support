@@ -36,7 +36,7 @@ function ClientsPage() {
 
   const getStatusBadge = (status: string | null) => {
     const variants: Record<string, any> = {
-      ativo: "success",
+      ativo: "default",
       inativo: "secondary",
       bloqueado: "destructive",
       prospect: "outline",
