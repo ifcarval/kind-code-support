@@ -5,8 +5,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, LayoutDashboard, Users, Settings, LogOut, Receipt, TrendingUp } from "lucide-react";
+import { 
+  Loader2, 
+  LayoutDashboard, 
+  Users, 
+  Settings, 
+  LogOut, 
+  Receipt, 
+  TrendingUp, 
+  ChevronLeft, 
+  ChevronRight,
+  DollarSign,
+  AlertCircle,
+  Clock,
+  Briefcase
+} from "lucide-react";
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
+import { cn } from "@/lib/utils";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from "recharts";
 
 export const Route = createFileRoute("/")({
   component: IndexPage,
@@ -148,9 +178,21 @@ function AuthPage() {
   );
 }
 
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+
 function Dashboard() {
   const navigate = useNavigate();
-  const { stats, loading } = useDashboardStats();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const { 
+    stats, 
+    history, 
+    statusDistribution, 
+    topClients, 
+    profitableServices, 
+    delinquentClients, 
+    upcomingDates, 
+    loading 
+  } = useDashboardStats();
   
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -163,42 +205,57 @@ function Dashboard() {
     }).format(value);
   };
 
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('pt-BR');
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
-      <aside className="w-64 border-r bg-card hidden md:flex flex-col">
-        <div className="p-6 border-b">
-          <h1 className="text-xl font-bold">Gestão Serviços</h1>
+      <aside className={cn(
+        "border-r bg-card transition-all duration-300 hidden md:flex flex-col",
+        isSidebarCollapsed ? "w-20" : "w-64"
+      )}>
+        <div className={cn("p-6 border-b flex items-center", isSidebarCollapsed ? "justify-center" : "justify-between")}>
+          {!isSidebarCollapsed && <h1 className="text-xl font-bold truncate">Gestão Serviços</h1>}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="h-8 w-8"
+          >
+            {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
         </div>
         <nav className="flex-1 p-4 space-y-2">
-          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate({ to: "/" })}>
+          <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")} onClick={() => navigate({ to: "/" })}>
             <LayoutDashboard className="h-4 w-4" />
-            Dashboard
+            {!isSidebarCollapsed && <span>Dashboard</span>}
           </Button>
-          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate({ to: "/billing" })}>
+          <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")} onClick={() => navigate({ to: "/billing" })}>
             <Receipt className="h-4 w-4" />
-            Faturamento
+            {!isSidebarCollapsed && <span>Faturamento</span>}
           </Button>
-          <Button variant="ghost" className="w-full justify-start gap-2">
+          <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")}>
             <Users className="h-4 w-4" />
-            Clientes
+            {!isSidebarCollapsed && <span>Clientes</span>}
           </Button>
-          <Button variant="ghost" className="w-full justify-start gap-2">
+          <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")}>
             <Settings className="h-4 w-4" />
-            Configurações
+            {!isSidebarCollapsed && <span>Configurações</span>}
           </Button>
         </nav>
         <div className="p-4 border-t">
-          <Button variant="ghost" className="w-full justify-start gap-2 text-destructive" onClick={handleSignOut}>
+          <Button variant="ghost" className={cn("w-full justify-start gap-2 text-destructive", isSidebarCollapsed && "justify-center px-0")} onClick={handleSignOut}>
             <LogOut className="h-4 w-4" />
-            Sair
+            {!isSidebarCollapsed && <span>Sair</span>}
           </Button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col">
-        <header className="h-16 border-b flex items-center justify-between px-6 bg-card">
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <header className="h-16 border-b flex items-center justify-between px-6 bg-card shrink-0">
           <h2 className="text-lg font-semibold">Dashboard Principal</h2>
           <div className="flex items-center gap-4">
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -207,50 +264,221 @@ function Dashboard() {
           </div>
         </header>
         
-        <div className="p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {loading ? (
             <div className="flex justify-center p-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
             <>
-              <div className="grid gap-6 md:grid-cols-3">
+              {/* Top Stats Cards */}
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Clientes Ativos</CardTitle>
                     <Users className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats?.active_clients || 0}</div>
-                    <p className="text-xs text-muted-foreground">Base de clientes atual</p>
+                    <div className="text-2xl font-bold">{stats?.total_clients || 0}</div>
+                    <p className="text-xs text-muted-foreground">Total de clientes na base</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Faturamento (Previsto)</CardTitle>
-                    <Receipt className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(stats?.monthly_revenue_projected || 0)}</div>
-                    <p className="text-xs text-muted-foreground">Competência atual</p>
+                    <div className="text-2xl font-bold">{formatCurrency(stats?.average_ticket || 0)}</div>
+                    <p className="text-xs text-muted-foreground">Média por fatura</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Recebido</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-success-foreground" />
+                    <CardTitle className="text-sm font-medium">Inadimplência</CardTitle>
+                    <AlertCircle className="h-4 w-4 text-destructive" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-success-foreground">{formatCurrency(stats?.monthly_revenue_received || 0)}</div>
-                    <p className="text-xs text-muted-foreground">
-                      {stats?.monthly_revenue_projected > 0 
-                        ? `${Math.round((stats.monthly_revenue_received / stats.monthly_revenue_projected) * 100)}% do total`
-                        : "0% do total"}
-                    </p>
+                    <div className="text-2xl font-bold text-destructive">
+                      {stats?.delinquency_rate ? `${stats.delinquency_rate.toFixed(1)}%` : "0%"}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Faturas vencidas</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Vencidos (Total)</CardTitle>
+                    <Receipt className="h-4 w-4 text-destructive" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-destructive">{formatCurrency(stats?.total_overdue_amount || 0)}</div>
+                    <p className="text-xs text-muted-foreground">A receber em atraso</p>
                   </CardContent>
                 </Card>
               </div>
 
+              {/* Charts Row */}
+              <div className="grid gap-6 lg:grid-cols-2">
+                <Card className="col-span-1">
+                  <CardHeader>
+                    <CardTitle>Histórico de Receita (12 Meses)</CardTitle>
+                    <CardDescription>Comparativo entre receita prevista e recebida</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={history}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis 
+                          dataKey="month" 
+                          tickFormatter={(str) => new Date(str).toLocaleDateString('pt-BR', { month: 'short' })}
+                        />
+                        <YAxis tickFormatter={(val) => `R$ ${val}`} />
+                        <Tooltip 
+                          formatter={(val: number) => formatCurrency(val)}
+                          labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                        />
+                        <Legend />
+                        <Line type="monotone" dataKey="projected" name="Previsto" stroke="#8884d8" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="received" name="Recebido" stroke="#82ca9d" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card className="col-span-1">
+                  <CardHeader>
+                    <CardTitle>Distribuição de Status</CardTitle>
+                    <CardDescription>Quantidade de faturas por status</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={statusDistribution}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="count"
+                          nameKey="status"
+                          label={(entry) => entry.status}
+                        >
+                          {statusDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Detailed Info Grid */}
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {/* Top Clients */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Maiores Clientes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {topClients.map((client, i) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium leading-none">{client.client_name}</p>
+                            <p className="text-xs text-muted-foreground">{client.invoice_count} faturas</p>
+                          </div>
+                          <div className="text-sm font-medium">{formatCurrency(client.total_projected)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Profitable Services */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Briefcase className="h-4 w-4" />
+                      Serviços Rentáveis
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {profitableServices.map((service, i) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium leading-none">{service.service_name}</p>
+                            <p className="text-xs text-muted-foreground">{service.active_contracts} contratos ativos</p>
+                          </div>
+                          <div className="text-sm font-medium">{formatCurrency(service.monthly_revenue)}/mês</div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Upcoming Due Dates */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Próximos Vencimentos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {upcomingDates.length > 0 ? upcomingDates.map((item, i) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium leading-none">{item.client_name}</p>
+                            <p className={cn(
+                              "text-xs font-medium",
+                              item.days_until <= 3 ? "text-destructive" : "text-muted-foreground"
+                            )}>
+                              Vence em {item.days_until} {item.days_until === 1 ? 'dia' : 'dias'}
+                            </p>
+                          </div>
+                          <div className="text-sm font-medium">{formatCurrency(item.valor_final)}</div>
+                        </div>
+                      )) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">Nenhum vencimento próximo</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Inadimplência Alert */}
+              {delinquentClients.length > 0 && (
+                <Card className="border-destructive/50 bg-destructive/5">
+                  <CardHeader>
+                    <CardTitle className="text-destructive flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5" />
+                      Atenção: Clientes Inadimplentes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                      {delinquentClients.map((client, i) => (
+                        <div key={i} className="flex flex-col p-3 border rounded-md bg-card">
+                          <span className="text-sm font-bold truncate">{client.client_name}</span>
+                          <span className="text-xs text-muted-foreground">{client.overdue_count} faturas atrasadas</span>
+                          <span className="text-sm font-bold text-destructive mt-1">{formatCurrency(client.total_overdue)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Instructions Verbatim Text (requirement) */}
               <Card>
                 <CardHeader>
                   <CardTitle>Bem-vindo ao Sistema</CardTitle>
@@ -261,8 +489,7 @@ function Dashboard() {
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
                     Acompanhe aqui o desempenho financeiro da sua empresa em tempo real. Analise o arquivo instrucoes.md anexo e siga todas as instruções.
-                  </p>
-                </CardContent>
+                  </CardContent>
               </Card>
             </>
           )}
