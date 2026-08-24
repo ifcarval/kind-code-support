@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useContractedServices } from "@/hooks/use-contracted-services";
+import { useClients } from "@/hooks/use-clients";
+import { useServices } from "@/hooks/use-services";
+import { useProfile } from "@/hooks/use-profile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -13,13 +16,28 @@ import {
   Edit, 
   Receipt,
   Search,
-  Filter
+  Filter,
+  Upload,
+  FileUp,
+  CheckCircle2,
+  AlertTriangle
 } from "lucide-react";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { Label } from "@/components/ui/label";
+import { useState, useRef } from "react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter,
+  DialogDescription 
+} from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { processContractFile } from "@/lib/contracts.functions";
 
 export const Route = createFileRoute("/contracted-services")({
   component: ContractedServicesPage,
