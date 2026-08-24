@@ -487,17 +487,16 @@ function Dashboard() {
                 </Card>
               )}
 
-              {/* Instructions Verbatim Text (requirement) */}
               <Card>
                 <CardHeader>
                   <CardTitle>Bem-vindo ao Sistema</CardTitle>
                   <CardDescription>
-                    Seu ambiente de gestão e cobranças está pronto para uso. Analise o arquivo instrucoes.md anexo e siga todas as instruções.
+                    Seu ambiente de gestão e cobranças está pronto para uso.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Acompanhe aqui o desempenho financeiro da sua empresa em tempo real. Analise o arquivo instrucoes.md anexo e siga todas as instruções.
+                    Acompanhe aqui o desempenho financeiro da sua empresa em tempo real.
                   </p>
                 </CardContent>
               </Card>
