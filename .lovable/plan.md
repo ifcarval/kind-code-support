@@ -1,32 +1,39 @@
-# Plano de Implementação: Dashboards Avançados e Dados de Demonstração
+# Plan: Advanced Dashboards & Analytics Integration
 
-Este plano detalha a implementação das consultas analíticas avançadas, expansão da base de dados de demonstração e melhorias na interface do usuário (Dashboard) conforme as novas instruções.
+Implement advanced analytics views integration, charts, and new dashboard components based on Phase 6 requirements.
 
-## 1. Backend: Consultas e Views Analíticas
-Criar uma nova migração com views otimizadas para:
-- **Relatórios Mensais**: Comparativo Previsto vs Recebido dos últimos 12 meses.
-- **Distribuição por Status**: Quantidade de faturas por status (pago, pendente, vencido).
-- **Métricas de Cliente**: Ticket médio, taxa de inadimplência e clientes inadimplentes.
-- **Performance de Serviços**: Lista dos serviços mais rentáveis.
-- **Agenda Financeira**: Próximos vencimentos em 7, 15 e 30 dias.
+## 1. Security & Infrastructure
+- Finalize security hardening for functions by revoking all non-essential execution privileges.
+- Verify view access for authenticated users.
 
-## 2. Backend: Dados de Demonstração (Seed)
-Expandir os dados iniciais para garantir gráficos realistas:
-- Gerar faturas históricas para os últimos 12 meses.
-- Simular diferentes comportamentos de pagamento (pagamentos em dia, atrasados, parciais e inadimplentes).
-- Vincular serviços variados aos 10 clientes de teste.
+## 2. Frontend: Data Layer
+- Expand `useDashboardStats` hook to fetch data from:
+  - `monthly_revenue_history` (12 months)
+  - `billing_status_distribution`
+  - `top_clients_revenue`
+  - `profitable_services`
+  - `delinquent_clients`
+  - `advanced_dashboard_stats`
+  - `upcoming_due_dates`
 
-## 3. Frontend: Dashboards e Gráficos
-- **Integração de Gráficos**: Adicionar a biblioteca `recharts` para exibir a receita mensal e distribuição de status.
-- **UI de Dashboard**: 
-    - Novos cards para métricas como "Taxa de Inadimplência" e "Ticket Médio".
-    - Tabelas de "Próximos Vencimentos" e "Clientes Inadimplentes".
-- **Melhorias de Navegação**:
-    - Sidebar colapsável.
-    - Cabeçalho com seletor de período e busca global funcional.
-- **Modo Escuro**: Garantir consistência visual em ambos os temas.
+## 3. Frontend: UI Components
+- **Charts**:
+  - Line Chart for Monthly Revenue History (Projected vs Received).
+  - Pie Chart for Billing Status Distribution.
+  - Bar Chart for Top Clients / Services.
+- **Metric Cards**:
+  - Average Ticket (Ticket Médio).
+  - Delinquency Rate (Taxa de Inadimplência).
+  - Total Overdue Amount.
+- **Lists/Tables**:
+  - Upcoming due dates section.
+  - Delinquent clients summary.
 
-## Detalhes Técnicos
-- As views utilizarão `SECURITY INVOKER` para respeitar as políticas de RLS existentes.
-- Utilização de `date_trunc` e `generate_series` no SQL para criar a série histórica de 12 meses mesmo que não haja dados em alguns meses.
-- O hook `useDashboardStats` será expandido para incluir os novos endpoints das views.
+## 4. Layout Improvements
+- Make the Sidebar collapsible.
+- Ensure responsive design for charts and tables.
+
+## Technical Details
+- Uses `recharts` for data visualization.
+- Multi-tenant data isolation via existing RLS on views.
+- `security_invoker` views ensure users only see their company's data.
