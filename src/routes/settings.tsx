@@ -57,9 +57,32 @@ export const Route = createFileRoute("/settings")({
 function SettingsPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  const { company, profile, loading, updateProfile, updateCompany } = useSettings();
+  const { company, profile: profileData, loading, updateProfile, updateCompany } = useSettings();
+  const { profile, isOwner, isLoading: profileLoading } = useProfile();
   const { templates, saveTemplate, deleteTemplate } = useNotifications();
   const { toast } = useToast();
+
+  if (!profileLoading && !isOwner) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-[calc(100vh-64px)] p-6">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <CardTitle className="text-destructive flex justify-center mb-2">Acesso Negado</CardTitle>
+              <CardDescription>
+                Você não tem permissão para acessar as configurações. 
+                Esta página é restrita a proprietários.
+              </CardDescription>
+            </CardHeader>
+            <CardFooter className="justify-center">
+              <Button onClick={() => window.location.href = "/"}>Voltar ao Início</Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
 
   // Notifications State
   const [autoReminders, setAutoReminders] = useState(false);

@@ -28,9 +28,31 @@ export const Route = createFileRoute("/clients")({
 
 function ClientsPage() {
   const { clients, loading, fetchClients, deleteClient, createClient, updateClient } = useClients();
-  const { profile } = useProfile();
+  const { profile, isOwner, isLoading: profileLoading } = useProfile();
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+
+  if (!profileLoading && !isOwner) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-[calc(100vh-64px)] p-6">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <CardTitle className="text-destructive flex justify-center mb-2">Acesso Negado</CardTitle>
+              <CardDescription>
+                Você não tem permissão para acessar a gestão de clientes. 
+                Esta página é restrita a proprietários.
+              </CardDescription>
+            </CardHeader>
+            <CardFooter className="justify-center">
+              <Button onClick={() => navigate({ to: "/" })}>Voltar ao Início</Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
 
   // Form State
   const [isModalOpen, setIsModalOpen] = useState(false);

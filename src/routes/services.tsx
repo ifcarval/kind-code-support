@@ -28,7 +28,29 @@ export const Route = createFileRoute("/services")({
 
 function ServicesPage() {
   const { services, loading, createService, updateService } = useServices();
-  const { profile } = useProfile();
+  const { profile, isOwner, isLoading: profileLoading } = useProfile();
+
+  if (!profileLoading && !isOwner) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-[calc(100vh-64px)] p-6">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <CardTitle className="text-destructive flex justify-center mb-2">Acesso Negado</CardTitle>
+              <CardDescription>
+                Você não tem permissão para acessar o catálogo de serviços. 
+                Esta página é restrita a proprietários.
+              </CardDescription>
+            </CardHeader>
+            <CardFooter className="justify-center">
+              <Button onClick={() => window.location.href = "/"}>Voltar ao Início</Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
 
   // Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
