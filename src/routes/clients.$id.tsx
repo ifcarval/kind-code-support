@@ -225,6 +225,8 @@ function ClientDetailsPage() {
           </Table>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
+
