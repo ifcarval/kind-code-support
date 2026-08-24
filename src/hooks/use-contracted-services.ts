@@ -55,7 +55,7 @@ export function useContractedServices() {
   };
 
   const generateManualInvoice = async (contractId: string) => {
-    const { data, error } = await supabase.rpc("generate_manual_invoice_from_contract", {
+    const { data, error } = await supabase.rpc("generate_manual_invoice_from_contract" as any, {
       _contract_id: contractId
     });
     return { data, error };
