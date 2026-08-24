@@ -61,6 +61,19 @@ export function useContractedServices() {
     return { data, error };
   };
 
+  const createContract = async (contractData: Database["public"]["Tables"]["client_services"]["Insert"]) => {
+    const { data, error } = await supabase
+      .from("client_services")
+      .insert(contractData)
+      .select()
+      .single();
+    
+    if (!error) {
+      setContractedServices(prev => [data, ...prev]);
+    }
+    return { data, error };
+  };
+
   useEffect(() => {
     fetchContractedServices();
   }, []);
@@ -74,5 +87,6 @@ export function useContractedServices() {
     pauseContract,
     reactivateContract,
     generateManualInvoice,
+    createContract,
   };
 }

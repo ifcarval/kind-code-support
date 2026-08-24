@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useContractedServices } from "@/hooks/use-contracted-services";
+import { useClients } from "@/hooks/use-clients";
+import { useServices } from "@/hooks/use-services";
+import { useProfile } from "@/hooks/use-profile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -13,13 +16,28 @@ import {
   Edit, 
   Receipt,
   Search,
-  Filter
+  Filter,
+  Upload,
+  FileUp,
+  CheckCircle2,
+  AlertTriangle
 } from "lucide-react";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { Label } from "@/components/ui/label";
+import { useState, useRef } from "react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter,
+  DialogDescription 
+} from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { processContractFile } from "@/lib/contracts.functions";
 
 export const Route = createFileRoute("/contracted-services")({
   component: ContractedServicesPage,
@@ -32,10 +50,113 @@ function ContractedServicesPage() {
     pauseContract, 
     reactivateContract, 
     cancelContract,
-    generateManualInvoice
+    generateManualInvoice,
+    createContract
   } = useContractedServices();
   
+  const { clients } = useClients();
+  const { services } = useServices();
+  const { profile } = useProfile();
+  
   const [searchTerm, setSearchTerm] = useState("");
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [importStep, setImportStep] = useState<'upload' | 'processing' | 'review'>('upload');
+  const [extractedData, setExtractedData] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile?.company_id) return;
+
+    setIsUploading(true);
+    setImportStep('processing');
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${profile.company_id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('contracts')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('contracts')
+        .getPublicUrl(filePath);
+
+      const result = await processContractFile({
+        data: {
+          fileUrl: publicUrl,
+          fileName: file.name
+        }
+      });
+
+      setExtractedData(result.extractedData);
+      setImportStep('review');
+    } catch (error: any) {
+      toast.error("Erro no processamento: " + error.message);
+      setImportStep('upload');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!profile?.company_id || !extractedData) return;
+    
+    // Tenta encontrar o cliente pelo nome ou cria um mockup (neste MVP assumimos vincular ao primeiro cliente encontrado ou criar um novo)
+    let clientId = clients.find(c => c.nome_razao_social.toLowerCase().includes(extractedData?.clientName?.toLowerCase() || ""))?.id;
+    
+    if (!clientId) {
+      const { data: newClient, error: clientError } = await supabase.from('clients').insert({
+        company_id: profile.company_id,
+        nome_razao_social: extractedData.clientName,
+        cpf_cnpj: extractedData.cpfCnpj,
+        status: 'ativo' as const
+      }).select().single();
+      
+      if (clientError) {
+        toast.error("Erro ao criar cliente: " + clientError.message);
+        return;
+      }
+      clientId = newClient.id;
+    }
+
+    // Tenta encontrar o serviço
+    let serviceId = services.find(s => s.nome.toLowerCase().includes(extractedData?.serviceName?.toLowerCase() || ""))?.id;
+    if (!serviceId && services && services.length > 0) {
+      const firstService = services[0];
+      if (firstService) serviceId = firstService.id;
+    }
+    if (!serviceId) {
+      toast.error("Nenhum serviço disponível no catálogo para vincular.");
+      return;
+    }
+
+    const { error } = await createContract({
+      company_id: profile.company_id,
+      client_id: clientId,
+      service_id: serviceId,
+      nome_servico: extractedData.serviceName,
+      valor_mensal: extractedData.monthlyValue,
+      dia_vencimento: extractedData.dueDay,
+      data_inicio: extractedData.startDate,
+      status: 'ativo',
+      tipo_cobranca: 'mensal'
+    });
+
+    if (error) {
+      toast.error("Erro ao criar contrato: " + error.message);
+    } else {
+      toast.success("Contrato importado e ativado com sucesso!");
+      setIsImportModalOpen(false);
+      setImportStep('upload');
+      setExtractedData(null);
+    }
+  };
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val);
@@ -101,6 +222,10 @@ function ContractedServicesPage() {
           <Briefcase className="h-6 w-6" />
           Serviços Contratados
         </h1>
+        <Button onClick={() => setIsImportModalOpen(true)} className="gap-2">
+          <FileUp className="h-4 w-4" />
+          Importar Contrato (IA)
+        </Button>
       </div>
 
       <Card>
@@ -200,6 +325,99 @@ function ContractedServicesPage() {
           )}
         </CardContent>
       </Card>
+      <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileUp className="h-5 w-5" />
+              Importação Inteligente de Contrato
+            </DialogTitle>
+            <DialogDescription>
+              A nossa IA irá extrair automaticamente os dados do contrato para facilitar o cadastro.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            {importStep === 'upload' && (
+              <div 
+                className="border-2 border-dashed rounded-lg p-12 text-center hover:bg-accent/50 cursor-pointer transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  ref={fileInputRef} 
+                  onChange={handleFileUpload}
+                  accept=".pdf,image/*"
+                />
+                <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">Clique para fazer upload</h3>
+                <p className="text-sm text-muted-foreground">PDF ou Imagem (Máx 5MB)</p>
+              </div>
+            )}
+
+            {importStep === 'processing' && (
+              <div className="text-center p-12 space-y-4">
+                <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
+                <h3 className="text-lg font-medium">Extraindo informações com IA...</h3>
+                <p className="text-sm text-muted-foreground">Estamos analisando o documento para você.</p>
+              </div>
+            )}
+
+            {importStep === 'review' && extractedData && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label>Cliente</Label>
+                    <Input value={extractedData.clientName} readOnly className="bg-muted" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>CPF/CNPJ</Label>
+                    <Input value={extractedData.cpfCnpj} readOnly className="bg-muted" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Serviço Identificado</Label>
+                    <Input value={extractedData.serviceName} readOnly className="bg-muted" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Valor Mensal</Label>
+                    <Input value={formatCurrency(extractedData.monthlyValue)} readOnly className="bg-muted" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Dia de Vencimento</Label>
+                    <Input value={`Dia ${extractedData.dueDay}`} readOnly className="bg-muted" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Data de Início</Label>
+                    <Input value={format(new Date(extractedData.startDate), "dd/MM/yyyy")} readOnly className="bg-muted" />
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800 flex gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-blue-600 shrink-0" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">Pronto para importar!</h4>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      O cliente e o contrato serão criados automaticamente. Você poderá editá-los depois.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            {importStep === 'review' ? (
+              <div className="flex gap-2 w-full justify-end">
+                <Button variant="outline" onClick={() => setImportStep('upload')}>Tentar Outro</Button>
+                <Button onClick={handleConfirmImport}>Confirmar e Ativar Contrato</Button>
+              </div>
+            ) : (
+              <Button variant="ghost" onClick={() => setIsImportModalOpen(false)}>Cancelar</Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
