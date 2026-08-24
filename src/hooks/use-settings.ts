@@ -1,20 +1,24 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
+import { Database } from "@/integrations/supabase/types";
+
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type Company = Database["public"]["Tables"]["companies"]["Row"];
 
 export interface CompanySettings {
   id: string;
-  name: string;
+  nome: string;
   cnpj: string | null;
-  address: string | null;
-  due_day_default: number;
-  currency: string;
-  date_format: string;
+  endereco: string | null;
+  due_day_default?: number;
+  currency?: string;
+  date_format?: string;
 }
 
 export interface UserProfile {
   id: string;
-  full_name: string | null;
+  nome: string;
   avatar_url: string | null;
 }
 
@@ -33,29 +37,40 @@ export function useSettings() {
       // Fetch Profile
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, full_name, avatar_url")
+        .select("id, nome, avatar_url")
         .eq("id", session.user.id)
         .single();
 
       if (profileError) throw profileError;
-      setProfile(profileData);
+      setProfile(profileData as UserProfile);
 
-      // Fetch Company
-      const { data: userRole } = await supabase
-        .from("user_roles")
+      // Fetch Company via company_id from profile
+      const { data: fullProfile } = await supabase
+        .from("profiles")
         .select("company_id")
-        .eq("user_id", session.user.id)
+        .eq("id", session.user.id)
         .single();
 
-      if (userRole?.company_id) {
+      if (fullProfile?.company_id) {
         const { data: companyData, error: companyError } = await supabase
           .from("companies")
-          .select("id, name, cnpj, address, due_day_default, currency, date_format")
-          .eq("id", userRole.company_id)
+          .select("*")
+          .eq("id", fullProfile.company_id)
           .single();
 
         if (companyError) throw companyError;
-        setCompany(companyData as CompanySettings);
+        
+        // Cast using 'any' for the new columns since they might not be in types.ts yet
+        const rawCompany = companyData as any;
+        setCompany({
+          id: rawCompany.id,
+          nome: rawCompany.nome,
+          cnpj: rawCompany.cnpj,
+          endereco: rawCompany.endereco,
+          due_day_default: rawCompany.due_day_default || 10,
+          currency: rawCompany.currency || 'BRL',
+          date_format: rawCompany.date_format || 'DD/MM/YYYY'
+        });
       }
     } catch (error: any) {
       console.error("Error fetching settings:", error);
@@ -80,7 +95,7 @@ export function useSettings() {
 
       const { error } = await supabase
         .from("profiles")
-        .update(updates)
+        .update(updates as any)
         .eq("id", session.user.id);
 
       if (error) throw error;
@@ -102,7 +117,7 @@ export function useSettings() {
 
       const { error } = await supabase
         .from("companies")
-        .update(updates)
+        .update(updates as any)
         .eq("id", company.id);
 
       if (error) throw error;
