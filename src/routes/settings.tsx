@@ -48,7 +48,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 
-export const Route = createFileRoute("/_authenticated/settings")({
+export const Route = createFileRoute("/settings")({
   component: SettingsPage,
 });
 
