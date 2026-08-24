@@ -899,6 +899,10 @@ export type Database = {
       }
     }
     Functions: {
+      generate_manual_invoice_from_contract: {
+        Args: { _contract_id: string }
+        Returns: string
+      }
       generate_monthly_invoices:
         | { Args: { _target_month: string }; Returns: number }
         | { Args: { p_company_id?: string }; Returns: number }
