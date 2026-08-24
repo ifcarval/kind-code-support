@@ -42,6 +42,8 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { processContractFile } from "@/lib/contracts.functions";
+import { CurrencyInput } from "@/components/CurrencyInput";
+
 
 export const Route = createFileRoute("/contracted-services")({
   component: ContractedServicesGuard,
@@ -108,11 +110,13 @@ function ContractedServicesPage() {
   const [formData, setFormData] = useState<any>({
     client_id: "",
     service_id: "",
+    nome_servico: "",
     valor_mensal: 0,
     dia_vencimento: 10,
     data_inicio: new Date().toISOString().split('T')[0],
     tipo_cobranca: 'mensal'
   });
+
 
   const handleOpenForm = (contract?: any) => {
     if (contract) {
@@ -121,9 +125,11 @@ function ContractedServicesPage() {
         client_id: contract.client_id,
         service_id: contract.service_id,
         valor_mensal: contract.valor_mensal,
+        nome_servico: contract.nome_servico || "",
         dia_vencimento: contract.dia_vencimento,
         data_inicio: contract.data_inicio,
         tipo_cobranca: contract.tipo_cobranca
+
       });
     } else {
       setEditingContract(null);
@@ -131,9 +137,11 @@ function ContractedServicesPage() {
         client_id: "",
         service_id: "",
         valor_mensal: 0,
+        nome_servico: "",
         dia_vencimento: 10,
         data_inicio: new Date().toISOString().split('T')[0],
         tipo_cobranca: 'mensal'
+
       });
     }
     setIsFormModalOpen(true);
@@ -484,29 +492,52 @@ function ContractedServicesPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>Cliente</Label>
-                    <Input value={extractedData.clientName} readOnly className="bg-muted" />
+                    <Input 
+                      value={extractedData.clientName} 
+                      onChange={(e) => setExtractedData({ ...extractedData, clientName: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>CPF/CNPJ</Label>
-                    <Input value={extractedData.cpfCnpj} readOnly className="bg-muted" />
+                    <Input 
+                      value={extractedData.cpfCnpj} 
+                      onChange={(e) => setExtractedData({ ...extractedData, cpfCnpj: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Serviço Identificado</Label>
-                    <Input value={extractedData.serviceName} readOnly className="bg-muted" />
+                    <Input 
+                      value={extractedData.serviceName} 
+                      onChange={(e) => setExtractedData({ ...extractedData, serviceName: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Valor Mensal</Label>
-                    <Input value={formatCurrency(extractedData.monthlyValue)} readOnly className="bg-muted" />
+                    <CurrencyInput
+                      value={extractedData.monthlyValue}
+                      onChange={(val) => setExtractedData({ ...extractedData, monthlyValue: val })}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Dia de Vencimento</Label>
-                    <Input value={`Dia ${extractedData.dueDay}`} readOnly className="bg-muted" />
+                    <Input 
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={extractedData.dueDay} 
+                      onChange={(e) => setExtractedData({ ...extractedData, dueDay: parseInt(e.target.value) })}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Data de Início</Label>
-                    <Input value={format(new Date(extractedData.startDate), "dd/MM/yyyy")} readOnly className="bg-muted" />
+                    <Input 
+                      type="date"
+                      value={extractedData.startDate.split('T')[0]} 
+                      onChange={(e) => setExtractedData({ ...extractedData, startDate: e.target.value })}
+                    />
                   </div>
                 </div>
+
 
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800 flex gap-3">
                   <CheckCircle2 className="h-5 w-5 text-blue-600 shrink-0" />
@@ -561,6 +592,16 @@ function ContractedServicesPage() {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label>Nome/Título do Contrato</Label>
+              <Input 
+                value={formData.nome_servico} 
+                onChange={(e) => setFormData({...formData, nome_servico: e.target.value})}
+                placeholder="Ex: Consultoria Mensal"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label>Serviço do Catálogo</Label>
               <Select 
                 value={formData.service_id} 
@@ -569,9 +610,11 @@ function ContractedServicesPage() {
                   setFormData({
                     ...formData, 
                     service_id: v,
+                    nome_servico: s?.nome || formData.nome_servico,
                     valor_mensal: s?.valor_padrao || formData.valor_mensal,
                     tipo_cobranca: s?.tipo_cobranca || formData.tipo_cobranca
                   });
+
                 }}
                 required
               >
@@ -588,13 +631,12 @@ function ContractedServicesPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Valor Mensal</Label>
-                <Input 
-                  type="number"
-                  step="0.01"
-                  value={formData.valor_mensal} 
-                  onChange={(e) => setFormData({...formData, valor_mensal: parseFloat(e.target.value)})}
+                <CurrencyInput
+                  value={formData.valor_mensal}
+                  onChange={(val) => setFormData({ ...formData, valor_mensal: val })}
                   required
                 />
+
               </div>
               <div className="space-y-2">
                 <Label>Dia Vencimento</Label>
