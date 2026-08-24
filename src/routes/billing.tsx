@@ -50,7 +50,7 @@ export const Route = createFileRoute("/billing")({
 
 function BillingPage() {
   const navigate = useNavigate();
-  const { invoices, loading, stats, fetchInvoices, generateMonthlyInvoices } = useBilling();
+  const { invoices, loading, stats, fetchInvoices, generateMonthlyInvoices, registerPayment } = useBilling();
   const { clients } = useClients();
   
   const [generating, setGenerating] = useState(false);
