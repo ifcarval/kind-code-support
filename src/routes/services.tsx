@@ -21,6 +21,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { CurrencyInput } from "@/components/CurrencyInput";
+
 
 export const Route = createFileRoute("/services")({
   component: ServicesGuard,
@@ -253,15 +255,14 @@ function ServicesPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="valor">Valor Padrão</Label>
-                <Input 
-                  id="valor" 
-                  type="number"
-                  step="0.01"
-                  value={formData.valor_padrao} 
-                  onChange={(e) => setFormData({...formData, valor_padrao: parseFloat(e.target.value)})}
+                <CurrencyInput
+                  id="valor"
+                  value={formData.valor_padrao}
+                  onChange={(val) => setFormData({ ...formData, valor_padrao: val })}
                   required
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="tipo">Periodicidade</Label>
                 <Select 
