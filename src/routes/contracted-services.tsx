@@ -108,7 +108,7 @@ function ContractedServicesPage() {
     if (!profile?.company_id || !extractedData) return;
     
     // Tenta encontrar o cliente pelo nome ou cria um mockup (neste MVP assumimos vincular ao primeiro cliente encontrado ou criar um novo)
-    let clientId = clients.find(c => c.nome_razao_social.toLowerCase().includes(extractedData.clientName.toLowerCase()))?.id;
+    let clientId = clients.find(c => c.nome_razao_social.toLowerCase().includes(extractedData?.clientName?.toLowerCase() || ""))?.id;
     
     if (!clientId) {
       const { data: newClient, error: clientError } = await supabase.from('clients').insert({
