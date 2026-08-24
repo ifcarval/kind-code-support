@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, LayoutDashboard, Users, Settings, LogOut, Receipt } from "lucide-react";
+import { Loader2, LayoutDashboard, Users, Settings, LogOut, Receipt, TrendingUp } from "lucide-react";
+import { useDashboardStats } from "@/hooks/use-dashboard-stats";
 
 export const Route = createFileRoute("/")({
   component: IndexPage,
