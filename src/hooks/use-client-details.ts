@@ -54,7 +54,7 @@ export function useClientDetails(clientId: string) {
         } else if (inv.status === "pendente" || inv.status === "vencida") {
           acc.totalEmAberto += inv.valor_final;
           
-          if (new Date(inv.data_vencimento) < today && inv.status !== "paga") {
+          if (new Date(inv.data_vencimento) < today) {
             acc.totalVencido += inv.valor_final;
           }
         }
