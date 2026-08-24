@@ -449,21 +449,33 @@ function BillingPage() {
             </DialogDescription>
           </DialogHeader>
           
-          <form className="space-y-4 py-4" onSubmit={(e) => {
+          <form className="space-y-4 py-4" onSubmit={async (e) => {
             e.preventDefault();
-            // Implementação do registro via hook será chamada aqui
-            toast.success("Pagamento registrado com sucesso! (Simulação)");
-            setPaymentOpen(false);
-            fetchInvoices();
+            const formData = new FormData(e.currentTarget);
+            const { error } = await registerPayment({
+              invoice_id: selectedInvoice.id,
+              valor_pago: Number(formData.get("valor")),
+              forma_pagamento: formData.get("metodo") as any,
+              observacoes: formData.get("obs") as string,
+              referencia_pagamento: formData.get("ref") as string,
+            });
+            
+            if (error) {
+              toast.error("Erro ao registrar pagamento: " + (error as any).message);
+            } else {
+              toast.success("Pagamento registrado com sucesso!");
+              setPaymentOpen(false);
+              fetchInvoices();
+            }
           }}>
             <div className="space-y-2">
               <label className="text-sm font-medium">Valor Recebido</label>
-              <Input type="number" step="0.01" defaultValue={selectedInvoice?.valor_final} required />
+              <Input name="valor" type="number" step="0.01" defaultValue={selectedInvoice?.valor_final} required />
             </div>
             
             <div className="space-y-2">
               <label className="text-sm font-medium">Forma de Pagamento</label>
-              <Select defaultValue="pix">
+              <Select name="metodo" defaultValue="pix">
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -478,13 +490,13 @@ function BillingPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Link do Comprovante (opcional)</label>
-              <Input placeholder="https://..." />
+              <label className="text-sm font-medium">Link do Comprovante / Referência (opcional)</label>
+              <Input name="ref" placeholder="https://... ou Nº Doc" />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Observações</label>
-              <Input placeholder="Notas sobre o pagamento..." />
+              <Input name="obs" placeholder="Notas sobre o pagamento..." />
             </div>
 
             <DialogFooter className="pt-4">
