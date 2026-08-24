@@ -489,7 +489,8 @@ function Dashboard() {
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
                     Acompanhe aqui o desempenho financeiro da sua empresa em tempo real. Analise o arquivo instrucoes.md anexo e siga todas as instruções.
-                  </CardContent>
+                  </p>
+                </CardContent>
               </Card>
             </>
           )}
