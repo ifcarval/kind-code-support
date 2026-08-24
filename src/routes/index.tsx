@@ -334,8 +334,8 @@ function Dashboard() {
                         />
                         <YAxis tickFormatter={(val) => `R$ ${val}`} />
                         <Tooltip 
-                          formatter={(val: number) => formatCurrency(val)}
-                          labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                          formatter={(val: any) => formatCurrency(Number(val))}
+                          labelFormatter={(label: any) => new Date(label).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
                         />
                         <Legend />
                         <Line type="monotone" dataKey="projected" name="Previsto" stroke="#8884d8" strokeWidth={2} dot={false} />
