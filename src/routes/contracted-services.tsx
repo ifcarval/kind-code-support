@@ -50,10 +50,108 @@ function ContractedServicesPage() {
     pauseContract, 
     reactivateContract, 
     cancelContract,
-    generateManualInvoice
+    generateManualInvoice,
+    createContract
   } = useContractedServices();
   
+  const { clients } = useClients();
+  const { services } = useServices();
+  const { profile } = useProfile();
+  
   const [searchTerm, setSearchTerm] = useState("");
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [importStep, setImportStep] = useState<'upload' | 'processing' | 'review'>('upload');
+  const [extractedData, setExtractedData] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile?.company_id) return;
+
+    setIsUploading(true);
+    setImportStep('processing');
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${profile.company_id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('contracts')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('contracts')
+        .getPublicUrl(filePath);
+
+      const result = await processContractFile({
+        fileUrl: publicUrl,
+        fileName: file.name
+      });
+
+      setExtractedData(result.extractedData);
+      setImportStep('review');
+    } catch (error: any) {
+      toast.error("Erro no processamento: " + error.message);
+      setImportStep('upload');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!profile?.company_id || !extractedData) return;
+    
+    // Tenta encontrar o cliente pelo nome ou cria um mockup (neste MVP assumimos vincular ao primeiro cliente encontrado ou criar um novo)
+    let clientId = clients.find(c => c.nome_razao_social.toLowerCase().includes(extractedData.clientName.toLowerCase()))?.id;
+    
+    if (!clientId) {
+      const { data: newClient, error: clientError } = await supabase.from('clients').insert({
+        company_id: profile.company_id,
+        nome_razao_social: extractedData.clientName,
+        cpf_cnpj: extractedData.cpfCnpj,
+        status: 'ativo'
+      }).select().single();
+      
+      if (clientError) {
+        toast.error("Erro ao criar cliente: " + clientError.message);
+        return;
+      }
+      clientId = newClient.id;
+    }
+
+    // Tenta encontrar o serviço
+    let serviceId = services.find(s => s.nome.toLowerCase().includes(extractedData.serviceName.toLowerCase()))?.id;
+    if (!serviceId && services.length > 0) serviceId = services[0].id;
+    if (!serviceId) {
+      toast.error("Nenhum serviço disponível no catálogo para vincular.");
+      return;
+    }
+
+    const { error } = await createContract({
+      company_id: profile.company_id,
+      client_id: clientId,
+      service_id: serviceId,
+      nome_servico: extractedData.serviceName,
+      valor_mensal: extractedData.monthlyValue,
+      dia_vencimento: extractedData.dueDay,
+      data_inicio: extractedData.startDate,
+      status: 'ativo',
+      tipo_cobranca: 'mensal'
+    });
+
+    if (error) {
+      toast.error("Erro ao criar contrato: " + error.message);
+    } else {
+      toast.success("Contrato importado e ativado com sucesso!");
+      setIsImportModalOpen(false);
+      setImportStep('upload');
+      setExtractedData(null);
+    }
+  };
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val);
