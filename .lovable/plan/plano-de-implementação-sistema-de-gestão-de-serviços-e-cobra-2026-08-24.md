@@ -1,43 +1,30 @@
-# Plano de Implementação: Sistema de Gestão de Serviços e Cobranças
+# Plano de Implementação - Sistema de Gestão de Serviços e Cobranças (Fase 2)
 
-Este plano detalha a construção do backend e da estrutura inicial do sistema, seguindo as especificações do arquivo `instrucoes.md`. O foco inicial será a infraestrutura de dados no Lovable Cloud (Supabase).
+O backend já foi configurado com sucesso. Agora vamos implementar a interface do usuário (Frontend) seguindo as especificações do arquivo `instrucoes-3.md`.
 
-## Objetivos
-- Implementar a estrutura completa do banco de dados (PostgreSQL).
-- Configurar autenticação e perfis de usuário.
-- Definir regras de segurança (RLS) para multi-empresa.
-- Criar funções para automação de cobranças recorrentes.
-- Popular o sistema com dados iniciais para demonstração.
+## 1. Autenticação e Perfil
+- Implementar tela de Login e Cadastro usando Lovable Cloud Auth.
+- Criar hook `useProfile` para gerenciar os dados do perfil do usuário logado.
+- Adicionar página de Configurações do Perfil para editar nome, telefone, empresa, cargo e avatar.
 
-## Etapas Técnicas
+## 2. Gestão de Clientes
+- Criar rota `/clients` para listagem de clientes com busca (nome, e-mail, telefone, CPF/CNPJ).
+- Criar formulário de criação/edição de clientes com validação de campos obrigatórios.
+- Implementar visualização de detalhes do cliente.
 
-### 1. Estrutura Base e Autenticação
-- **Tabelas de Perfis e Empresas**:
-  - `companies`: Dados da empresa/assinante.
-  - `profiles`: Dados do usuário vinculado à empresa.
-- **Autenticação**: Configurar e-mail/senha e Google.
-- **Automação de Perfil**: Trigger para criar perfil no cadastro.
+## 3. Catálogo de Serviços
+- Criar rota `/services` para gerenciar o catálogo de serviços da empresa.
+- Implementar formulário para definir nome, descrição, categoria, valor padrão e tipo de cobrança.
 
-### 2. Cadastro de Clientes e Serviços
-- **Clientes (`clients`)**: Cadastro completo com validações brasileiras.
-- **Catálogo (`services`)**: Definição dos serviços oferecidos.
-- **Serviços Contratados (`client_services`)**: Vínculo cliente-serviço com valores personalizados.
-
-### 3. Faturamento e Cobranças
-- **Faturas (`invoices`)**: Registro de cobranças mensais.
-- **Itens de Fatura (`invoice_items`)**: Detalhamento da cobrança.
-- **Pagamentos (`payments`)**: Registro de recebimentos (integrais ou parciais).
-
-### 4. Inteligência e Automação
-- **Automação de Cobranças**: Função SQL para gerar faturas mensais automaticamente para serviços recorrentes ativos.
-- **Segurança Multi-empresa**: Políticas RLS garantindo que um usuário só acesse dados de sua própria `company_id`.
-- **Views de Dashboard**: Consultas otimizadas para faturamento, inadimplência e KPIs.
-
-### 5. Dados de Exemplo
-- Inserção de dados fictícios (10 clientes, 8 serviços, faturas históricas) para visualização imediata no dashboard.
+## 4. Serviços Contratados (Assinaturas)
+- Criar interface para vincular serviços do catálogo aos clientes.
+- Permitir personalização de valores e datas de vencimento por contrato.
+- Exibir status do serviço (ativo, pausado, cancelado).
 
 ## Detalhes Técnicos
-- **Banco de Dados**: PostgreSQL com extensões `pg_cron` e `pg_net` (para automações futuras).
-- **Segurança**: Row Level Security (RLS) em 100% das tabelas.
-- **Moeda**: Tratamento nativo em Real (BRL).
-- **Relacionamentos**: Integridade referencial com `ON DELETE CASCADE` ou restrições de inativação.
+- **Layout**: Sidebar para navegação principal, Header com informações do perfil.
+- **Estado**: TanStack Query para busca de dados e sincronização com o banco.
+- **Componentes**: shadcn/ui para tabelas, formulários e modais.
+- **Segurança**: Garantir que `company_id` seja filtrado em todas as consultas (RLS já configurado).
+
+A primeira tarefa será substituir a página inicial atual pelo Dashboard principal.
