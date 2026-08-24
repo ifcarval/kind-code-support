@@ -150,11 +150,11 @@ function AdminUsersPage() {
                         <TableCell>
                           <span className="flex items-center gap-1 text-sm">
                             <Calendar className="h-3 w-3 text-muted-foreground" />
-                            {formatDate(u.company?.trial_ends_at)}
+                            {formatDate(u.company?.trial_ends_at ?? null)}
                           </span>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {formatDate(u.created_at)}
+                          {formatDate(u.created_at ?? null)}
                         </TableCell>
                       </TableRow>
                     ))}
