@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { AppLayout } from "@/components/AppLayout";
 import { useClientDetails } from "@/hooks/use-client-details";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -32,25 +34,32 @@ function ClientDetailsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <AppLayout>
+        <div className="flex h-[calc(100vh-12rem)] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
     );
   }
 
   if (!client) {
     return (
-      <div className="p-6 text-center">
-        <p>Cliente não encontrado.</p>
-        <Button onClick={() => navigate({ to: "/clients" })} variant="link">Voltar para listagem</Button>
-      </div>
+      <AppLayout>
+        <div className="p-6 text-center">
+          <p>Cliente não encontrado.</p>
+          <Button onClick={() => navigate({ to: "/clients" })} variant="link">Voltar para listagem</Button>
+        </div>
+      </AppLayout>
     );
   }
+
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val);
 
   return (
+    <AppLayout>
+
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/clients" })}>
