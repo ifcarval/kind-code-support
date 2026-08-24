@@ -19,12 +19,34 @@ import {
   Globe,
   Loader2,
   Calendar,
-  CreditCard
+  CreditCard,
+  Bell,
+  Plus,
+  Trash2,
+  MessageSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useNotifications } from "@/hooks/use-notifications";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription, 
+  DialogFooter 
+} from "@/components/ui/dialog";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
@@ -34,7 +56,20 @@ function SettingsPage() {
   const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { company, profile, loading, updateProfile, updateCompany } = useSettings();
+  const { templates, saveTemplate, deleteTemplate } = useNotifications();
   const { toast } = useToast();
+
+  // Notifications State
+  const [autoReminders, setAutoReminders] = useState(false);
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<any>(null);
+  const [templateFormData, setTemplateFormData] = useState({
+    name: "",
+    content: "",
+    trigger_type: "manual" as any,
+    days_offset: 0
+  });
 
   // Profile Form State
   const [profileName, setProfileName] = useState("");
@@ -60,8 +95,40 @@ function SettingsPage() {
       setDueDay(company.due_day_default || 10);
       setCurrency(company.currency || "BRL");
       setDateFormat(company.date_format || "DD/MM/YYYY");
+      setAutoReminders(company.auto_reminders_enabled || false);
+      setWhatsappEnabled(company.whatsapp_enabled || false);
     }
   }, [profile, company]);
+
+  const handleOpenTemplate = (template?: any) => {
+    if (template) {
+      setEditingTemplate(template);
+      setTemplateFormData({
+        name: template.name,
+        content: template.content,
+        trigger_type: template.trigger_type,
+        days_offset: template.days_offset
+      });
+    } else {
+      setEditingTemplate(null);
+      setTemplateFormData({
+        name: "",
+        content: "",
+        trigger_type: "manual",
+        days_offset: 0
+      });
+    }
+    setIsTemplateModalOpen(true);
+  };
+
+  const handleSaveTemplate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await saveTemplate({
+      id: editingTemplate?.id,
+      ...templateFormData
+    });
+    setIsTemplateModalOpen(false);
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -87,7 +154,9 @@ function SettingsPage() {
     await updateCompany({ 
       due_day_default: dueDay, 
       currency, 
-      date_format: dateFormat 
+      date_format: dateFormat,
+      auto_reminders_enabled: autoReminders,
+      whatsapp_enabled: whatsappEnabled
     });
   };
 
@@ -162,12 +231,15 @@ function SettingsPage() {
         
         <div className="flex-1 overflow-y-auto p-6">
           <Tabs defaultValue="profile" className="w-full max-w-4xl mx-auto">
-            <TabsList className="grid w-full grid-cols-3 mb-8">
+            <TabsList className="grid w-full grid-cols-4 mb-8">
               <TabsTrigger value="profile" className="gap-2">
                 <User className="h-4 w-4" /> Perfil
               </TabsTrigger>
               <TabsTrigger value="company" className="gap-2">
                 <Building2 className="h-4 w-4" /> Empresa
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="gap-2">
+                <Bell className="h-4 w-4" /> Mensagens
               </TabsTrigger>
               <TabsTrigger value="preferences" className="gap-2">
                 <Globe className="h-4 w-4" /> Preferências
@@ -246,6 +318,95 @@ function SettingsPage() {
                   </CardFooter>
                 </form>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="notifications">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Automação de Lembretes</CardTitle>
+                    <CardDescription>
+                      Configure como e quando os lembretes automáticos devem ser enviados.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                      <div className="space-y-0.5">
+                        <label className="text-base font-medium">Lembretes Automáticos</label>
+                        <p className="text-sm text-muted-foreground">
+                          Enviar automaticamente mensagens baseadas nos templates de gatilho.
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={autoReminders} 
+                        onCheckedChange={setAutoReminders} 
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                      <div className="space-y-0.5">
+                        <label className="text-base font-medium">Integração WhatsApp</label>
+                        <p className="text-sm text-muted-foreground">
+                          Habilita botões de envio direto via WhatsApp (requer configuração futura).
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={whatsappEnabled} 
+                        onCheckedChange={setWhatsappEnabled} 
+                      />
+                    </div>
+                  </CardContent>
+                  <CardFooter className="justify-end border-t pt-4">
+                    <Button onClick={onUpdatePreferences}>Salvar Configurações</Button>
+                  </CardFooter>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle>Templates de Mensagens</CardTitle>
+                      <CardDescription>
+                        Padronize a comunicação com seus clientes usando tags dinâmicas.
+                      </CardDescription>
+                    </div>
+                    <Button onClick={() => handleOpenTemplate()} className="gap-2">
+                      <Plus className="h-4 w-4" /> Novo Template
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {templates.map(template => (
+                        <div key={template.id} className="flex flex-col border rounded-lg overflow-hidden">
+                          <div className="p-4 border-b bg-muted/50 flex justify-between items-center">
+                            <div className="font-semibold text-sm flex items-center gap-2">
+                              <MessageSquare className="h-4 w-4" />
+                              {template.name}
+                            </div>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenTemplate(template)}>
+                                <Settings className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteTemplate(template.id)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="p-4 bg-card flex-1">
+                            <p className="text-xs text-muted-foreground line-clamp-3 italic">
+                              "{template.content}"
+                            </p>
+                          </div>
+                          <div className="px-4 py-2 border-t bg-muted/20 flex justify-between text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                            <span>Tipo: {template.trigger_type}</span>
+                            {template.trigger_type !== 'manual' && (
+                              <span>Offset: {template.days_offset} dias</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="preferences">
@@ -330,7 +491,76 @@ function SettingsPage() {
             </TabsContent>
           </Tabs>
         </div>
+
+        {/* Modal CRUD Template */}
+        <Dialog open={isTemplateModalOpen} onOpenChange={setIsTemplateModalOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{editingTemplate ? "Editar Template" : "Novo Template"}</DialogTitle>
+              <DialogDescription>
+                Use {"{cliente}"}, {"{valor}"}, {"{vencimento}"} e {"{numero}"} como variáveis.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSaveTemplate}>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Nome do Template</label>
+                  <Input 
+                    value={templateFormData.name}
+                    onChange={(e) => setTemplateFormData({...templateFormData, name: e.target.value})}
+                    placeholder="Ex: Lembrete de Atraso"
+                    required
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Gatilho</label>
+                    <Select 
+                      value={templateFormData.trigger_type} 
+                      onValueChange={(val) => setTemplateFormData({...templateFormData, trigger_type: val})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="manual">Manual</SelectItem>
+                        <SelectItem value="due_soon">Vencendo em breve</SelectItem>
+                        <SelectItem value="overdue">Atrasada</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Dias (Offset)</label>
+                    <Input 
+                      type="number"
+                      value={templateFormData.days_offset}
+                      onChange={(e) => setTemplateFormData({...templateFormData, days_offset: Number(e.target.value)})}
+                      disabled={templateFormData.trigger_type === 'manual'}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Conteúdo da Mensagem</label>
+                  <Textarea 
+                    value={templateFormData.content}
+                    onChange={(e) => setTemplateFormData({...templateFormData, content: e.target.value})}
+                    placeholder="Olá {cliente}, sua fatura..."
+                    className="min-h-[120px]"
+                    required
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsTemplateModalOpen(false)}>Cancelar</Button>
+                <Button type="submit">Salvar Template</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </main>
+
     </div>
   );
 }
