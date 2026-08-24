@@ -51,7 +51,8 @@ function ContractedServicesPage() {
     reactivateContract, 
     cancelContract,
     generateManualInvoice,
-    createContract
+    createContract,
+    updateContractedService
   } = useContractedServices();
   
   const { clients } = useClients();
@@ -60,6 +61,67 @@ function ContractedServicesPage() {
   
   const [searchTerm, setSearchTerm] = useState("");
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [editingContract, setEditingContract] = useState<any>(null);
+  const [formData, setFormData] = useState<any>({
+    client_id: "",
+    service_id: "",
+    valor_mensal: 0,
+    dia_vencimento: 10,
+    data_inicio: new Date().toISOString().split('T')[0],
+    tipo_cobranca: 'mensal'
+  });
+
+  const handleOpenForm = (contract?: any) => {
+    if (contract) {
+      setEditingContract(contract);
+      setFormData({
+        client_id: contract.client_id,
+        service_id: contract.service_id,
+        valor_mensal: contract.valor_mensal,
+        dia_vencimento: contract.dia_vencimento,
+        data_inicio: contract.data_inicio,
+        tipo_cobranca: contract.tipo_cobranca
+      });
+    } else {
+      setEditingContract(null);
+      setFormData({
+        client_id: "",
+        service_id: "",
+        valor_mensal: 0,
+        dia_vencimento: 10,
+        data_inicio: new Date().toISOString().split('T')[0],
+        tipo_cobranca: 'mensal'
+      });
+    }
+    setIsFormModalOpen(true);
+  };
+
+  const handleSaveContract = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile?.company_id) return;
+
+    const data = {
+      ...formData,
+      nome_servico: services.find(s => s.id === formData.service_id)?.nome || "Serviço",
+      company_id: profile.company_id,
+      status: 'ativo'
+    };
+
+    let result;
+    if (editingContract) {
+      result = await updateContractedService(editingContract.id, data);
+    } else {
+      result = await createContract(data);
+    }
+
+    if (result.error) toast.error("Erro ao salvar contrato: " + result.error.message);
+    else {
+      toast.success(editingContract ? "Contrato atualizado!" : "Contrato criado!");
+      setIsFormModalOpen(false);
+    }
+  };
+  
   const [isUploading, setIsUploading] = useState(false);
   const [importStep, setImportStep] = useState<'upload' | 'processing' | 'review'>('upload');
   const [extractedData, setExtractedData] = useState<any>(null);
@@ -107,7 +169,6 @@ function ContractedServicesPage() {
   const handleConfirmImport = async () => {
     if (!profile?.company_id || !extractedData) return;
     
-    // Tenta encontrar o cliente pelo nome ou cria um mockup (neste MVP assumimos vincular ao primeiro cliente encontrado ou criar um novo)
     let clientId = clients.find(c => c.nome_razao_social.toLowerCase().includes(extractedData?.clientName?.toLowerCase() || ""))?.id;
     
     if (!clientId) {
@@ -125,7 +186,6 @@ function ContractedServicesPage() {
       clientId = newClient.id;
     }
 
-    // Tenta encontrar o serviço
     let serviceId = services.find(s => s.nome.toLowerCase().includes(extractedData?.serviceName?.toLowerCase() || ""))?.id;
     if (!serviceId && services && services.length > 0) {
       const firstService = services[0];
@@ -222,11 +282,17 @@ function ContractedServicesPage() {
           <Briefcase className="h-6 w-6" />
           Serviços Contratados
         </h1>
-        <Button onClick={() => setIsImportModalOpen(true)} className="gap-2">
-          <FileUp className="h-4 w-4" />
-          Importar Contrato (IA)
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => handleOpenForm()} className="gap-2" variant="outline">
+            <Plus className="h-4 w-4" /> Novo
+          </Button>
+          <Button onClick={() => setIsImportModalOpen(true)} className="gap-2">
+            <FileUp className="h-4 w-4" />
+            Importar Contrato (IA)
+          </Button>
+        </div>
       </div>
+
 
       <Card>
         <CardHeader>
