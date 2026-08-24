@@ -720,9 +720,11 @@ function BillingPage() {
           </form>
         </DialogContent>
       </Dialog>
+      </AppLayout>
     </div>
   );
 }
+
 
 // Helper function for class merging
 function cn(...inputs: any[]) {
