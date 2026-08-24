@@ -5,16 +5,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus, Receipt } from "lucide-react";
+import { Loader2, Plus, Receipt, RefreshCcw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/billing")({
   component: BillingPage,
 });
 
 function BillingPage() {
-  const { invoices, loading } = useBilling();
+  const { invoices, loading, generateMonthlyInvoices } = useBilling();
+  const [generating, setGenerating] = useState(false);
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    const { data, error } = await generateMonthlyInvoices();
+    setGenerating(false);
+
+    if (error) {
+      toast.error("Erro ao gerar faturas: " + error.message);
+    } else {
+      toast.success(`${data} fatura(s) gerada(s) com sucesso!`);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
@@ -34,10 +48,16 @@ function BillingPage() {
           <Receipt className="h-6 w-6" />
           Faturamento
         </h1>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nova Fatura
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleGenerate} disabled={generating}>
+            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+            Gerar Faturas do Mês
+          </Button>
+          <Button className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nova Fatura
+          </Button>
+        </div>
       </div>
 
       <Card>
