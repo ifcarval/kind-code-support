@@ -1,4 +1,4 @@
--- Advanced Analytics Views (Fixed Column Names and Enums)
+-- Advanced Analytics Views (Fixed for Actual Schema)
 
 -- 1. Monthly Revenue History (Last 12 months)
 CREATE OR REPLACE VIEW public.monthly_revenue_history WITH (security_invoker = true) AS
@@ -45,39 +45,39 @@ GROUP BY company_id, status;
 CREATE OR REPLACE VIEW public.top_clients_revenue WITH (security_invoker = true) AS
 SELECT 
     i.company_id,
-    c.name as client_name,
+    c.nome_razao_social as client_name,
     COUNT(i.id) as invoice_count,
     SUM(i.valor_final) as total_projected,
     SUM(CASE WHEN i.status = 'paga' THEN i.valor_final ELSE 0 END) as total_received
 FROM public.invoices i
 JOIN public.clients c ON i.client_id = c.id
-GROUP BY i.company_id, c.name
+GROUP BY i.company_id, c.nome_razao_social
 ORDER BY total_projected DESC;
 
 -- 4. Profitable Services
 CREATE OR REPLACE VIEW public.profitable_services WITH (security_invoker = true) AS
 SELECT 
     s.company_id,
-    s.name as service_name,
+    s.nome as service_name,
     COUNT(cs.id) as active_contracts,
     SUM(cs.price) as monthly_revenue
 FROM public.services s
 JOIN public.client_services cs ON s.id = cs.service_id
 WHERE cs.status = 'active'
-GROUP BY s.company_id, s.name
+GROUP BY s.company_id, s.nome
 ORDER BY monthly_revenue DESC;
 
 -- 5. Delinquent Clients (Inadimplentes)
 CREATE OR REPLACE VIEW public.delinquent_clients WITH (security_invoker = true) AS
 SELECT 
     c.company_id,
-    c.name as client_name,
+    c.nome_razao_social as client_name,
     COUNT(i.id) as overdue_count,
     SUM(i.valor_final) as total_overdue
 FROM public.clients c
 JOIN public.invoices i ON c.id = i.client_id
 WHERE i.status = 'vencida'
-GROUP BY c.company_id, c.name
+GROUP BY c.company_id, c.nome_razao_social
 HAVING COUNT(i.id) > 0;
 
 -- 6. Advanced Stats (Ticket Médio, Delinquency Rate)
@@ -106,7 +106,7 @@ FROM public.companies c;
 CREATE OR REPLACE VIEW public.upcoming_due_dates WITH (security_invoker = true) AS
 SELECT 
     i.company_id,
-    c.name as client_name,
+    c.nome_razao_social as client_name,
     i.data_vencimento,
     i.valor_final,
     i.status,
@@ -117,8 +117,8 @@ WHERE i.status = 'pendente'
   AND i.data_vencimento >= current_date 
   AND i.data_vencimento <= current_date + interval '30 days';
 
--- Demo Data Expansion (Fixed for Existing Schema and Enums)
-DO 24099
+-- Demo Data Expansion (Fixed for Actual Schema)
+DO 24374
 DECLARE
     v_company_id UUID;
     v_client_id UUID;
@@ -133,23 +133,23 @@ BEGIN
     IF v_company_id IS NOT NULL THEN
         -- Create more services (Total 8)
         FOR i IN 1..8 LOOP
-            INSERT INTO public.services (company_id, name, description, price, billing_cycle)
-            VALUES (v_company_id, 'Serviço Premium ' || i, 'Descrição do serviço ' || i, 150.00 * i, 'monthly')
-            ON CONFLICT (company_id, name) DO NOTHING;
+            INSERT INTO public.services (company_id, nome, descricao, valor_padrao, recorrente, ativo)
+            VALUES (v_company_id, 'Serviço Premium ' || i, 'Descrição do serviço ' || i, 150.00 * i, true, true)
+            ON CONFLICT (company_id, nome) DO NOTHING;
         END LOOP;
 
         -- Ensure 10 clients
         FOR i IN 1..10 LOOP
-            INSERT INTO public.clients (company_id, name, email, document, phone)
+            INSERT INTO public.clients (company_id, nome_razao_social, email, cpf_cnpj, telefone)
             VALUES (v_company_id, 'Cliente Fictício ' || i, 'cliente' || i || '@exemplo.com', '1234567890' || i, '119999999' || i)
-            ON CONFLICT (company_id, document) DO NOTHING;
+            ON CONFLICT (company_id, cpf_cnpj) DO NOTHING;
         END LOOP;
 
         -- Link services to clients
         FOR v_client_id IN (SELECT id FROM public.clients WHERE company_id = v_company_id) LOOP
             FOR v_service_id IN (SELECT id FROM public.services WHERE company_id = v_company_id ORDER BY random() LIMIT 2) LOOP
                 INSERT INTO public.client_services (client_id, service_id, price, status, next_billing_date)
-                VALUES (v_client_id, v_service_id, (SELECT price FROM public.services WHERE id = v_service_id), 'active', now() + interval '1 month')
+                VALUES (v_client_id, v_service_id, (SELECT valor_padrao FROM public.services WHERE id = v_service_id), 'active', now() + interval '1 month')
                 ON CONFLICT DO NOTHING;
             END LOOP;
         END LOOP;
@@ -189,7 +189,7 @@ BEGIN
 
                 -- Add items to invoice
                 INSERT INTO public.invoice_items (invoice_id, description, quantity, unit_price, total_price)
-                SELECT v_invoice_id, s.name, 1, cs.price, cs.price
+                SELECT v_invoice_id, s.nome, 1, cs.price, cs.price
                 FROM public.client_services cs
                 JOIN public.services s ON cs.service_id = s.id
                 WHERE cs.client_id = v_client_id;
@@ -202,4 +202,4 @@ BEGIN
             END LOOP;
         END LOOP;
     END IF;
-END 24099;
+END 24374;
