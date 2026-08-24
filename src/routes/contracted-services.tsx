@@ -115,7 +115,7 @@ function ContractedServicesPage() {
         company_id: profile.company_id,
         nome_razao_social: extractedData.clientName,
         cpf_cnpj: extractedData.cpfCnpj,
-        status: 'ativo'
+        status: 'ativo' as const
       }).select().single();
       
       if (clientError) {
