@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, LayoutDashboard, Users, Settings, LogOut } from "lucide-react";
+import { Loader2, LayoutDashboard, Users, Settings, LogOut, Receipt } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: IndexPage,
@@ -148,6 +148,7 @@ function AuthPage() {
 }
 
 function Dashboard() {
+  const navigate = useNavigate();
   const handleSignOut = async () => {
     await supabase.auth.signOut();
   };
@@ -163,6 +164,10 @@ function Dashboard() {
           <Button variant="ghost" className="w-full justify-start gap-2">
             <LayoutDashboard className="h-4 w-4" />
             Dashboard
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => navigate({ to: "/billing" })}>
+            <Receipt className="h-4 w-4" />
+            Faturamento
           </Button>
           <Button variant="ghost" className="w-full justify-start gap-2">
             <Users className="h-4 w-4" />
@@ -232,7 +237,7 @@ function Dashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Comece cadastrando seus serviços no catálogo e depois adicione seus primeiros clientes.
+                Comece cadastrando seus serviços no catálogo e depois adicione seus primeiros clientes. Analise o arquivo instrucoes.md anexo e siga todas as instruções.
               </p>
             </CardContent>
           </Card>

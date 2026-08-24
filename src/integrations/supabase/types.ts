@@ -482,10 +482,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      generate_monthly_invoices: {
-        Args: { p_company_id?: string }
-        Returns: number
-      }
+      generate_monthly_invoices:
+        | { Args: { _target_month: string }; Returns: number }
+        | { Args: { p_company_id?: string }; Returns: number }
     }
     Enums: {
       billing_type:
