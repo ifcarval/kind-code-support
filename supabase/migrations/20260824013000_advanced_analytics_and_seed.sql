@@ -1,4 +1,4 @@
--- Advanced Analytics Views (Fixed for Actual Schema)
+-- Advanced Analytics Views (Fixed for Actual Schema - Step 7)
 
 -- 1. Monthly Revenue History (Last 12 months)
 CREATE OR REPLACE VIEW public.monthly_revenue_history WITH (security_invoker = true) AS
@@ -60,10 +60,10 @@ SELECT
     s.company_id,
     s.nome as service_name,
     COUNT(cs.id) as active_contracts,
-    SUM(cs.price) as monthly_revenue
+    SUM(cs.valor_mensal) as monthly_revenue
 FROM public.services s
 JOIN public.client_services cs ON s.id = cs.service_id
-WHERE cs.status = 'active'
+WHERE cs.status = 'ativo'
 GROUP BY s.company_id, s.nome
 ORDER BY monthly_revenue DESC;
 
@@ -117,8 +117,8 @@ WHERE i.status = 'pendente'
   AND i.data_vencimento >= current_date 
   AND i.data_vencimento <= current_date + interval '30 days';
 
--- Demo Data Expansion (Fixed for Actual Schema)
-DO 24374
+-- Demo Data Expansion (Fixed for Actual Schema and Enums)
+DO 24669
 DECLARE
     v_company_id UUID;
     v_client_id UUID;
@@ -148,8 +148,8 @@ BEGIN
         -- Link services to clients
         FOR v_client_id IN (SELECT id FROM public.clients WHERE company_id = v_company_id) LOOP
             FOR v_service_id IN (SELECT id FROM public.services WHERE company_id = v_company_id ORDER BY random() LIMIT 2) LOOP
-                INSERT INTO public.client_services (client_id, service_id, price, status, next_billing_date)
-                VALUES (v_client_id, v_service_id, (SELECT valor_padrao FROM public.services WHERE id = v_service_id), 'active', now() + interval '1 month')
+                INSERT INTO public.client_services (company_id, client_id, service_id, valor_mensal, status, data_inicio)
+                VALUES (v_company_id, v_client_id, v_service_id, (SELECT valor_padrao FROM public.services WHERE id = v_service_id), 'ativo', now())
                 ON CONFLICT DO NOTHING;
             END LOOP;
         END LOOP;
@@ -189,7 +189,7 @@ BEGIN
 
                 -- Add items to invoice
                 INSERT INTO public.invoice_items (invoice_id, description, quantity, unit_price, total_price)
-                SELECT v_invoice_id, s.nome, 1, cs.price, cs.price
+                SELECT v_invoice_id, s.nome, 1, cs.valor_mensal, cs.valor_mensal
                 FROM public.client_services cs
                 JOIN public.services s ON cs.service_id = s.id
                 WHERE cs.client_id = v_client_id;
@@ -202,4 +202,4 @@ BEGIN
             END LOOP;
         END LOOP;
     END IF;
-END 24374;
+END 24669;
