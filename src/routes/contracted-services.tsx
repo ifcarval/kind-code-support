@@ -88,8 +88,10 @@ function ContractedServicesPage() {
         .getPublicUrl(filePath);
 
       const result = await processContractFile({
-        fileUrl: publicUrl,
-        fileName: file.name
+        data: {
+          fileUrl: publicUrl,
+          fileName: file.name
+        }
       });
 
       setExtractedData(result.extractedData);
