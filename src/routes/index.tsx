@@ -245,9 +245,13 @@ function Dashboard() {
             <Receipt className="h-4 w-4" />
             {!isSidebarCollapsed && <span>Faturamento</span>}
           </Button>
-          <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")}>
+          <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")} onClick={() => navigate({ to: "/clients" })}>
             <Users className="h-4 w-4" />
             {!isSidebarCollapsed && <span>Clientes</span>}
+          </Button>
+          <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")} onClick={() => navigate({ to: "/services" })}>
+            <Briefcase className="h-4 w-4" />
+            {!isSidebarCollapsed && <span>Serviços</span>}
           </Button>
           <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")}>
             <Settings className="h-4 w-4" />
