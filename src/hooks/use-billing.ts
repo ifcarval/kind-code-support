@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
+
+type PaymentMethod = Database["public"]["Enums"]["payment_method"];
 
 export function useBilling() {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -11,7 +14,7 @@ export function useBilling() {
       .from("invoices")
       .select(`
         *,
-        client:clients(name)
+        client:clients(nome_razao_social)
       `)
       .order("created_at", { ascending: false });
 
@@ -24,14 +27,13 @@ export function useBilling() {
   const registerPayment = async (paymentData: {
     invoice_id: string;
     valor_pago: number;
-    forma_pagamento: string;
+    forma_pagamento: PaymentMethod;
     referencia_pagamento?: string;
     observacoes?: string;
   }) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "Não autenticado" };
 
-    // Buscar company_id do usuário/perfil
     const { data: profile } = await supabase
       .from("profiles")
       .select("company_id")
@@ -41,7 +43,11 @@ export function useBilling() {
     if (!profile?.company_id) return { error: "Empresa não encontrada" };
 
     const { error } = await supabase.from("payments").insert({
-      ...paymentData,
+      invoice_id: paymentData.invoice_id,
+      valor_pago: paymentData.valor_pago,
+      forma_pagamento: paymentData.forma_pagamento,
+      referencia_pagamento: paymentData.referencia_pagamento ?? null,
+      observacoes: paymentData.observacoes ?? null,
       company_id: profile.company_id,
     });
 
