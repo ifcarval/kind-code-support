@@ -13,10 +13,10 @@ export const Route = createFileRoute("/services")({
 function ServicesPage() {
   const { services, loading } = useServices();
 
-  const getStatusBadge = (status: string | null) => {
+  const getStatusBadge = (ativo: boolean | null) => {
     return (
-      <Badge variant={status === "ativo" ? "success" : "secondary"}>
-        {status === "ativo" ? "Ativo" : "Inativo"}
+      <Badge variant={ativo ? "default" : "secondary"}>
+        {ativo ? "Ativo" : "Inativo"}
       </Badge>
     );
   };
