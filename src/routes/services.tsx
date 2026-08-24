@@ -273,7 +273,9 @@ function ServicesPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
+
 
