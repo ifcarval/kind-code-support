@@ -127,7 +127,7 @@ function ContractedServicesPage() {
 
     // Tenta encontrar o serviço
     let serviceId = services.find(s => s.nome.toLowerCase().includes(extractedData?.serviceName?.toLowerCase() || ""))?.id;
-    if (!serviceId && services.length > 0) serviceId = services[0].id;
+    if (!serviceId && (services?.length || 0) > 0) serviceId = services[0].id;
     if (!serviceId) {
       toast.error("Nenhum serviço disponível no catálogo para vincular.");
       return;
