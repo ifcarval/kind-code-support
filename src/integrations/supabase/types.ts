@@ -81,6 +81,13 @@ export type Database = {
             foreignKeyName: "client_services_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "advanced_dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "client_services_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
@@ -89,6 +96,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "client_services_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_revenue_history"
             referencedColumns: ["company_id"]
           },
           {
@@ -166,6 +180,13 @@ export type Database = {
             foreignKeyName: "clients_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "advanced_dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "clients_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
@@ -174,6 +195,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "clients_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_revenue_history"
             referencedColumns: ["company_id"]
           },
         ]
@@ -338,6 +366,13 @@ export type Database = {
             foreignKeyName: "invoices_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "advanced_dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
@@ -346,6 +381,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_revenue_history"
             referencedColumns: ["company_id"]
           },
         ]
@@ -389,6 +431,13 @@ export type Database = {
             foreignKeyName: "payments_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "advanced_dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
@@ -397,6 +446,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_revenue_history"
             referencedColumns: ["company_id"]
           },
           {
@@ -450,6 +506,13 @@ export type Database = {
             foreignKeyName: "profiles_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "advanced_dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
@@ -458,6 +521,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_revenue_history"
             referencedColumns: ["company_id"]
           },
         ]
@@ -507,6 +577,13 @@ export type Database = {
             foreignKeyName: "services_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "advanced_dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "services_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
@@ -517,10 +594,82 @@ export type Database = {
             referencedRelation: "dashboard_stats"
             referencedColumns: ["company_id"]
           },
+          {
+            foreignKeyName: "services_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_revenue_history"
+            referencedColumns: ["company_id"]
+          },
         ]
       }
     }
     Views: {
+      advanced_dashboard_stats: {
+        Row: {
+          average_ticket: number | null
+          company_id: string | null
+          delinquency_rate: number | null
+          total_clients: number | null
+          total_overdue_amount: number | null
+          total_services: number | null
+        }
+        Insert: {
+          average_ticket?: never
+          company_id?: string | null
+          delinquency_rate?: never
+          total_clients?: never
+          total_overdue_amount?: never
+          total_services?: never
+        }
+        Update: {
+          average_ticket?: never
+          company_id?: string | null
+          delinquency_rate?: never
+          total_clients?: never
+          total_overdue_amount?: never
+          total_services?: never
+        }
+        Relationships: []
+      }
+      billing_status_distribution: {
+        Row: {
+          company_id: string | null
+          count: number | null
+          status: Database["public"]["Enums"]["invoice_status"] | null
+          total_amount: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "advanced_dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_revenue_history"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
       dashboard_stats: {
         Row: {
           active_clients: number | null
@@ -545,6 +694,44 @@ export type Database = {
         }
         Relationships: []
       }
+      delinquent_clients: {
+        Row: {
+          client_name: string | null
+          company_id: string | null
+          overdue_count: number | null
+          total_overdue: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "advanced_dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "clients_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "clients_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_revenue_history"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
       monthly_billing_history: {
         Row: {
           company_id: string | null
@@ -558,6 +745,13 @@ export type Database = {
             foreignKeyName: "invoices_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "advanced_dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
@@ -566,6 +760,139 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_revenue_history"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      monthly_revenue_history: {
+        Row: {
+          company_id: string | null
+          month: string | null
+          projected: number | null
+          received: number | null
+        }
+        Relationships: []
+      }
+      profitable_services: {
+        Row: {
+          active_contracts: number | null
+          company_id: string | null
+          monthly_revenue: number | null
+          service_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "advanced_dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "services_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "services_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_revenue_history"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      top_clients_revenue: {
+        Row: {
+          client_name: string | null
+          company_id: string | null
+          invoice_count: number | null
+          total_projected: number | null
+          total_received: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "advanced_dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_revenue_history"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      upcoming_due_dates: {
+        Row: {
+          client_name: string | null
+          company_id: string | null
+          data_vencimento: string | null
+          days_until: number | null
+          status: Database["public"]["Enums"]["invoice_status"] | null
+          valor_final: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "advanced_dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_stats"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_revenue_history"
             referencedColumns: ["company_id"]
           },
         ]
