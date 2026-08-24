@@ -1,4 +1,4 @@
--- Advanced Analytics Views (Fixed Column Names)
+-- Advanced Analytics Views (Fixed Column Names and Enums)
 
 -- 1. Monthly Revenue History (Last 12 months)
 CREATE OR REPLACE VIEW public.monthly_revenue_history WITH (security_invoker = true) AS
@@ -19,7 +19,7 @@ revenue AS (
         i.company_id,
         date_trunc('month', i.data_vencimento) as month,
         SUM(i.valor_final) as projected,
-        SUM(CASE WHEN i.status = 'pago' THEN i.valor_final ELSE 0 END) as received
+        SUM(CASE WHEN i.status = 'paga' THEN i.valor_final ELSE 0 END) as received
     FROM public.invoices i
     GROUP BY 1, 2
 )
@@ -48,7 +48,7 @@ SELECT
     c.name as client_name,
     COUNT(i.id) as invoice_count,
     SUM(i.valor_final) as total_projected,
-    SUM(CASE WHEN i.status = 'pago' THEN i.valor_final ELSE 0 END) as total_received
+    SUM(CASE WHEN i.status = 'paga' THEN i.valor_final ELSE 0 END) as total_received
 FROM public.invoices i
 JOIN public.clients c ON i.client_id = c.id
 GROUP BY i.company_id, c.name
@@ -76,7 +76,7 @@ SELECT
     SUM(i.valor_final) as total_overdue
 FROM public.clients c
 JOIN public.invoices i ON c.id = i.client_id
-WHERE i.status = 'atrasado'
+WHERE i.status = 'vencida'
 GROUP BY c.company_id, c.name
 HAVING COUNT(i.id) > 0;
 
@@ -89,7 +89,7 @@ SELECT
     (SELECT COALESCE(AVG(valor_final), 0) FROM public.invoices WHERE company_id = c.id) as average_ticket,
     (
         SELECT COALESCE(
-            (COUNT(CASE WHEN status = 'atrasado' THEN 1 END)::float / NULLIF(COUNT(*), 0) * 100),
+            (COUNT(CASE WHEN status = 'vencida' THEN 1 END)::float / NULLIF(COUNT(*), 0) * 100),
             0
         )
         FROM public.invoices
@@ -98,7 +98,7 @@ SELECT
     (
         SELECT SUM(valor_final)
         FROM public.invoices
-        WHERE company_id = c.id AND status = 'atrasado'
+        WHERE company_id = c.id AND status = 'vencida'
     ) as total_overdue_amount
 FROM public.companies c;
 
@@ -117,8 +117,8 @@ WHERE i.status = 'pendente'
   AND i.data_vencimento >= current_date 
   AND i.data_vencimento <= current_date + interval '30 days';
 
--- Demo Data Expansion (Fixed for Existing Schema)
-DO $$
+-- Demo Data Expansion (Fixed for Existing Schema and Enums)
+DO 24099
 DECLARE
     v_company_id UUID;
     v_client_id UUID;
@@ -178,9 +178,9 @@ BEGIN
                     v_month_start,
                     v_month_start + interval '10 days',
                     CASE 
-                        WHEN i = 0 THEN 'pendente' 
-                        WHEN random() > 0.2 THEN 'pago' 
-                        ELSE 'atrasado' 
+                        WHEN i = 0 THEN 'pendente'::public.invoice_status
+                        WHEN random() > 0.2 THEN 'paga'::public.invoice_status
+                        ELSE 'vencida'::public.invoice_status
                     END,
                     250.00,
                     250.00,
@@ -196,10 +196,10 @@ BEGIN
                 
                 -- Record payment for paid invoices
                 INSERT INTO public.payments (company_id, invoice_id, valor_pago, data_pagamento, forma_pagamento)
-                SELECT v_company_id, v_invoice_id, 250.00, v_month_start + interval '10 days', 'transferencia'
+                SELECT v_company_id, v_invoice_id, 250.00, v_month_start + interval '10 days', 'transferencia'::public.payment_method
                 FROM public.invoices
-                WHERE id = v_invoice_id AND status = 'pago';
+                WHERE id = v_invoice_id AND status = 'paga';
             END LOOP;
         END LOOP;
     END IF;
-END $$;
+END 24099;
