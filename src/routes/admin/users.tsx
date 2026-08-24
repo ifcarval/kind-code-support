@@ -145,7 +145,7 @@ function AdminUsersPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {getStatusBadge(u.company?.subscription_status)}
+                          {getStatusBadge(u.company?.subscription_status ?? null)}
                         </TableCell>
                         <TableCell>
                           <span className="flex items-center gap-1 text-sm">
