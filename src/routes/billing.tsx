@@ -1,5 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
+import { AppLayout } from "@/components/AppLayout";
+
 import { useBilling } from "@/hooks/use-billing";
 import { useClients } from "@/hooks/use-clients";
 import { useProfile } from "@/hooks/use-profile";
@@ -53,7 +55,7 @@ export const Route = createFileRoute("/billing")({
 });
 
 function BillingPage() {
-  const navigate = useNavigate();
+  
   const { invoices, loading, stats, fetchInvoices, generateMonthlyInvoices, registerPayment, sendInvoiceReminder } = useBilling();
   const { clients } = useClients();
   const { templates } = useNotifications();
@@ -210,26 +212,26 @@ function BillingPage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Receipt className="h-8 w-8 text-primary" />
-            Cobranças
-          </h1>
-          <p className="text-muted-foreground mt-1">Gerencie as faturas e pagamentos de seus clientes.</p>
-        </div>
-        <div className="flex gap-2 w-full md:w-auto">
-          <Button variant="outline" className="gap-2 flex-1 md:flex-none" onClick={handleGenerate} disabled={generating}>
+    <AppLayout>
+
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Receipt className="h-6 w-6" />
+          Cobranças
+        </h1>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleGenerate} disabled={generating}>
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
             Gerar Mensais
           </Button>
-          <Button className="gap-2 flex-1 md:flex-none" onClick={() => handleOpenForm()}>
+          <Button className="gap-2" onClick={() => handleOpenForm()}>
             <Plus className="h-4 w-4" />
             Nova Fatura
           </Button>
         </div>
       </div>
+
 
       {/* Indicadores Rápidos */}
       <div className="grid gap-6 md:grid-cols-3">
@@ -718,9 +720,12 @@ function BillingPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
+
+
 
 // Helper function for class merging
 function cn(...inputs: any[]) {

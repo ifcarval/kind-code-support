@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AppLayout } from "@/components/AppLayout";
 import { useContractedServices } from "@/hooks/use-contracted-services";
+
 import { useClients } from "@/hooks/use-clients";
 import { useServices } from "@/hooks/use-services";
 import { useProfile } from "@/hooks/use-profile";
@@ -278,6 +280,8 @@ function ContractedServicesPage() {
   );
 
   return (
+    <AppLayout>
+
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -582,7 +586,9 @@ function ContractedServicesPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
+
 

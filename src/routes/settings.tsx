@@ -1,5 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
+import { AppLayout } from "@/components/AppLayout";
+
 import { useSettings } from "@/hooks/use-settings";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -53,8 +55,8 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
-  const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
   const { company, profile, loading, updateProfile, updateCompany } = useSettings();
   const { templates, saveTemplate, deleteTemplate } = useNotifications();
   const { toast } = useToast();
@@ -130,10 +132,6 @@ function SettingsPage() {
     setIsTemplateModalOpen(false);
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate({ to: "/" });
-  };
 
   const onUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,65 +167,17 @@ function SettingsPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
-      {/* Sidebar */}
-      <aside className={cn(
-        "border-r bg-card transition-all duration-300 hidden md:flex flex-col",
-        isSidebarCollapsed ? "w-20" : "w-64"
-      )}>
-        <div className={cn("p-6 border-b flex items-center", isSidebarCollapsed ? "justify-center" : "justify-between")}>
-          {!isSidebarCollapsed && <h1 className="text-xl font-bold truncate">Gestão Serviços</h1>}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="h-8 w-8"
-          >
-            {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </Button>
-        </div>
-        <nav className="flex-1 p-4 space-y-2">
-          <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")} onClick={() => navigate({ to: "/" })}>
-            <LayoutDashboard className="h-4 w-4" />
-            {!isSidebarCollapsed && <span>Dashboard</span>}
-          </Button>
-          <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")} onClick={() => navigate({ to: "/billing" })}>
-            <Receipt className="h-4 w-4" />
-            {!isSidebarCollapsed && <span>Faturamento</span>}
-          </Button>
-          <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")} onClick={() => navigate({ to: "/clients" })}>
-            <Users className="h-4 w-4" />
-            {!isSidebarCollapsed && <span>Clientes</span>}
-          </Button>
-          <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")} onClick={() => navigate({ to: "/services" })}>
-            <Briefcase className="h-4 w-4" />
-            {!isSidebarCollapsed && <span>Catálogo Serviços</span>}
-          </Button>
-          <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")} onClick={() => navigate({ to: "/contracted-services" })}>
-            <Receipt className="h-4 w-4" />
-            {!isSidebarCollapsed && <span>Serviços Contratados</span>}
-          </Button>
-          <Button variant="secondary" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")} onClick={() => navigate({ to: "/settings" })}>
-            <Settings className="h-4 w-4" />
-            {!isSidebarCollapsed && <span>Configurações</span>}
-          </Button>
-        </nav>
-        <div className="p-4 border-t">
-          <Button variant="ghost" className={cn("w-full justify-start gap-2 text-destructive", isSidebarCollapsed && "justify-center px-0")} onClick={handleSignOut}>
-            <LogOut className="h-4 w-4" />
-            {!isSidebarCollapsed && <span>Sair</span>}
-          </Button>
-        </div>
-      </aside>
+    <AppLayout>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 border-b flex items-center justify-between px-6 bg-card shrink-0">
-          <h2 className="text-lg font-semibold">Configurações</h2>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-          </div>
-        </header>
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Settings className="h-6 w-6" />
+          Configurações
+        </h1>
+        <ThemeToggle />
+      </div>
+
         
         <div className="flex-1 overflow-y-auto p-6">
           <Tabs defaultValue="profile" className="w-full max-w-4xl mx-auto">
@@ -559,8 +509,9 @@ function SettingsPage() {
             </form>
           </DialogContent>
         </Dialog>
-      </main>
-
-    </div>
+      </div>
+    </AppLayout>
   );
 }
+
+

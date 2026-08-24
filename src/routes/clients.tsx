@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { AppLayout } from "@/components/AppLayout";
+
 import { useClients } from "@/hooks/use-clients";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -121,6 +123,8 @@ function ClientsPage() {
   };
 
   return (
+    <AppLayout>
+
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -315,7 +319,9 @@ function ClientsPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
+
 
