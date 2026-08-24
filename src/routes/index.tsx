@@ -88,15 +88,24 @@ function AuthPage() {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
         });
         if (error) throw error;
-        toast({
-          title: "Cadastro realizado!",
-          description: "Verifique seu e-mail para confirmar a conta.",
-        });
+        
+        // Se auto-confirmação estiver ativa, o session pode vir direto
+        if (data.session) {
+          toast({
+            title: "Cadastro realizado!",
+            description: "Sua conta foi criada com sucesso.",
+          });
+        } else {
+          toast({
+            title: "Cadastro realizado!",
+            description: "Verifique seu e-mail para confirmar a conta.",
+          });
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
