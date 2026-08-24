@@ -23,14 +23,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/services")({
-  component: ServicesPage,
+  component: ServicesGuard,
 });
 
-function ServicesPage() {
-  const { services, loading, createService, updateService } = useServices();
-  const { profile, isOwner, isLoading: profileLoading } = useProfile();
+function ServicesGuard() {
+  const { isOwner, isLoading: profileLoading } = useProfile();
 
-  if (!profileLoading && !isOwner) {
+  if (profileLoading) {
+    return (
+      <AppLayout>
+        <div className="p-6 text-muted-foreground">Carregando...</div>
+      </AppLayout>
+    );
+  }
+
+  if (!isOwner) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-[calc(100vh-64px)] p-6">
@@ -50,6 +57,15 @@ function ServicesPage() {
       </AppLayout>
     );
   }
+
+  return <ServicesPage />;
+}
+
+function ServicesPage() {
+  const { services, loading, createService, updateService } = useServices();
+  const { profile } = useProfile();
+
+
 
 
   // Form State

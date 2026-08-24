@@ -52,18 +52,21 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/settings")({
-  component: SettingsPage,
+  component: SettingsGuard,
 });
 
-function SettingsPage() {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+function SettingsGuard() {
+  const { isOwner, isLoading: profileLoading } = useProfile();
 
-  const { company, profile: profileData, loading, updateProfile, updateCompany } = useSettings();
-  const { profile, isOwner, isLoading: profileLoading } = useProfile();
-  const { templates, saveTemplate, deleteTemplate } = useNotifications();
-  const { toast } = useToast();
+  if (profileLoading) {
+    return (
+      <AppLayout>
+        <div className="p-6 text-muted-foreground">Carregando...</div>
+      </AppLayout>
+    );
+  }
 
-  if (!profileLoading && !isOwner) {
+  if (!isOwner) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-[calc(100vh-64px)] p-6">
@@ -83,6 +86,19 @@ function SettingsPage() {
       </AppLayout>
     );
   }
+
+  return <SettingsPage />;
+}
+
+function SettingsPage() {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const { company, profile: profileData, loading, updateProfile, updateCompany } = useSettings();
+  const { profile } = useProfile();
+  const { templates, saveTemplate, deleteTemplate } = useNotifications();
+  const { toast } = useToast();
+
+
 
 
   // Notifications State

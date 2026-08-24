@@ -23,16 +23,22 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/clients")({
-  component: ClientsPage,
+  component: ClientsGuard,
 });
 
-function ClientsPage() {
-  const { clients, loading, fetchClients, deleteClient, createClient, updateClient } = useClients();
-  const { profile, isOwner, isLoading: profileLoading } = useProfile();
-  const [searchTerm, setSearchTerm] = useState("");
+function ClientsGuard() {
+  const { isOwner, isLoading: profileLoading } = useProfile();
   const navigate = useNavigate();
 
-  if (!profileLoading && !isOwner) {
+  if (profileLoading) {
+    return (
+      <AppLayout>
+        <div className="p-6 text-muted-foreground">Carregando...</div>
+      </AppLayout>
+    );
+  }
+
+  if (!isOwner) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-[calc(100vh-64px)] p-6">
@@ -52,6 +58,17 @@ function ClientsPage() {
       </AppLayout>
     );
   }
+
+  return <ClientsPage />;
+}
+
+function ClientsPage() {
+  const { clients, loading, fetchClients, deleteClient, createClient, updateClient } = useClients();
+  const { profile } = useProfile();
+  const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
+
+
 
 
   // Form State

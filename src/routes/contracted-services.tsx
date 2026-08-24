@@ -44,26 +44,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { processContractFile } from "@/lib/contracts.functions";
 
 export const Route = createFileRoute("/contracted-services")({
-  component: ContractedServicesPage,
+  component: ContractedServicesGuard,
 });
 
-function ContractedServicesPage() {
-  const { 
-    contractedServices, 
-    loading, 
-    pauseContract, 
-    reactivateContract, 
-    cancelContract,
-    generateManualInvoice,
-    createContract,
-    updateContractedService
-  } = useContractedServices();
-  
-  const { clients } = useClients();
-  const { services } = useServices();
-  const { profile, isOwner, isLoading: profileLoading } = useProfile();
-  
-  if (!profileLoading && !isOwner) {
+function ContractedServicesGuard() {
+  const { isOwner, isLoading: profileLoading } = useProfile();
+
+  if (profileLoading) {
+    return (
+      <AppLayout>
+        <div className="p-6 text-muted-foreground">Carregando...</div>
+      </AppLayout>
+    );
+  }
+
+  if (!isOwner) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-[calc(100vh-64px)] p-6">
@@ -83,6 +78,27 @@ function ContractedServicesPage() {
       </AppLayout>
     );
   }
+
+  return <ContractedServicesPage />;
+}
+
+function ContractedServicesPage() {
+  const { 
+    contractedServices, 
+    loading, 
+    pauseContract, 
+    reactivateContract, 
+    cancelContract,
+    generateManualInvoice,
+    createContract,
+    updateContractedService
+  } = useContractedServices();
+  
+  const { clients } = useClients();
+  const { services } = useServices();
+  const { profile } = useProfile();
+
+
 
   
   const [searchTerm, setSearchTerm] = useState("");
