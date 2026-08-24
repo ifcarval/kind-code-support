@@ -251,7 +251,11 @@ function Dashboard() {
           </Button>
           <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")} onClick={() => navigate({ to: "/services" })}>
             <Briefcase className="h-4 w-4" />
-            {!isSidebarCollapsed && <span>Serviços</span>}
+            {!isSidebarCollapsed && <span>Catálogo Serviços</span>}
+          </Button>
+          <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")} onClick={() => navigate({ to: "/contracted-services" })}>
+            <Receipt className="h-4 w-4" />
+            {!isSidebarCollapsed && <span>Serviços Contratados</span>}
           </Button>
           <Button variant="ghost" className={cn("w-full justify-start gap-2", isSidebarCollapsed && "justify-center px-0")}>
             <Settings className="h-4 w-4" />
