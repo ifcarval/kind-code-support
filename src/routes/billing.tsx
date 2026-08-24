@@ -628,7 +628,70 @@ function BillingPage() {
                   onChange={(e) => setFormData({...formData, valor_original: parseFloat(e.target.value)})}
                   required
                 />
-              </div>
+      {/* Modal de Envio de Lembrete */}
+      <Dialog open={reminderOpen} onOpenChange={setReminderOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-primary" />
+              Enviar Lembrete
+            </DialogTitle>
+            <DialogDescription>
+              Selecione um template para enviar ao cliente {selectedInvoice?.client?.nome_razao_social}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Template de Mensagem</label>
+              <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um template" />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map(template => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name} ({template.trigger_type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {selectedTemplate && (
+              <Card className="bg-muted/30">
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Pré-visualização do Conteúdo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="py-2 px-4 text-sm whitespace-pre-wrap italic">
+                  {templates.find(t => t.id === selectedTemplate)?.content
+                    .replace("{cliente}", selectedInvoice?.client?.nome_razao_social || "Cliente")
+                    .replace("{valor}", formatCurrency(selectedInvoice?.valor_final || 0))
+                    .replace("{vencimento}", selectedInvoice?.data_vencimento ? format(new Date(selectedInvoice.data_vencimento), "dd/MM/yyyy") : "")
+                    .replace("{numero}", selectedInvoice?.numero_fatura || "")
+                  }
+                </CardContent>
+              </Card>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReminderOpen(false)}>Cancelar</Button>
+            <Button 
+              onClick={handleSendReminder} 
+              disabled={!selectedTemplate || sendingReminder}
+              className="gap-2"
+            >
+              {sendingReminder ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+              Enviar Lembrete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Vencimento</label>
                 <Input 
