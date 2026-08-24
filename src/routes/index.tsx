@@ -362,10 +362,10 @@ function Dashboard() {
                           paddingAngle={5}
                           dataKey="count"
                           nameKey="status"
-                          label={(entry) => entry.status}
+                          label={(entry: any) => entry.status}
                         >
-                          {statusDistribution.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          {statusDistribution.map((_entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length] || "#8884d8"} />
                           ))}
                         </Pie>
                         <Tooltip />
