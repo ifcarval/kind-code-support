@@ -10,76 +10,83 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as BillingRouteImport } from './routes/billing'
-import { Route as ClientsRouteImport } from './routes/clients'
-import { Route as ContractedServicesRouteImport } from './routes/contracted-services'
-import { Route as ServicesRouteImport } from './routes/services'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as ClientsIdRouteImport } from './routes/clients.$id'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated.billing'
+import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated.clients'
+import { Route as AuthenticatedContractedServicesRouteImport } from './routes/_authenticated.contracted-services'
+import { Route as AuthenticatedServicesRouteImport } from './routes/_authenticated.services'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
+import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated.clients.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BillingRoute = BillingRouteImport.update({
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
   id: '/billing',
   path: '/billing',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ClientsRoute = ClientsRouteImport.update({
+const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
   id: '/clients',
   path: '/clients',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ContractedServicesRoute = ContractedServicesRouteImport.update({
-  id: '/contracted-services',
-  path: '/contracted-services',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ServicesRoute = ServicesRouteImport.update({
+const AuthenticatedContractedServicesRoute =
+  AuthenticatedContractedServicesRouteImport.update({
+    id: '/contracted-services',
+    path: '/contracted-services',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedServicesRoute = AuthenticatedServicesRouteImport.update({
   id: '/services',
   path: '/services',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const SettingsRoute = SettingsRouteImport.update({
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ClientsIdRoute = ClientsIdRouteImport.update({
+const AuthenticatedClientsIdRoute = AuthenticatedClientsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
-  getParentRoute: () => ClientsRoute,
+  getParentRoute: () => AuthenticatedClientsRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/billing': typeof BillingRoute
-  '/clients': typeof ClientsRouteWithChildren
-  '/contracted-services': typeof ContractedServicesRoute
-  '/services': typeof ServicesRoute
-  '/settings': typeof SettingsRoute
-  '/clients/$id': typeof ClientsIdRoute
+  '/billing': typeof AuthenticatedBillingRoute
+  '/clients': typeof AuthenticatedClientsRouteWithChildren
+  '/contracted-services': typeof AuthenticatedContractedServicesRoute
+  '/services': typeof AuthenticatedServicesRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/clients/$id': typeof AuthenticatedClientsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/billing': typeof BillingRoute
-  '/clients': typeof ClientsRouteWithChildren
-  '/contracted-services': typeof ContractedServicesRoute
-  '/services': typeof ServicesRoute
-  '/settings': typeof SettingsRoute
-  '/clients/$id': typeof ClientsIdRoute
+  '/billing': typeof AuthenticatedBillingRoute
+  '/clients': typeof AuthenticatedClientsRouteWithChildren
+  '/contracted-services': typeof AuthenticatedContractedServicesRoute
+  '/services': typeof AuthenticatedServicesRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/clients/$id': typeof AuthenticatedClientsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/billing': typeof BillingRoute
-  '/clients': typeof ClientsRouteWithChildren
-  '/contracted-services': typeof ContractedServicesRoute
-  '/services': typeof ServicesRoute
-  '/settings': typeof SettingsRoute
-  '/clients/$id': typeof ClientsIdRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/_authenticated/billing': typeof AuthenticatedBillingRoute
+  '/_authenticated/clients': typeof AuthenticatedClientsRouteWithChildren
+  '/_authenticated/contracted-services': typeof AuthenticatedContractedServicesRoute
+  '/_authenticated/services': typeof AuthenticatedServicesRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -103,21 +110,18 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/billing'
-    | '/clients'
-    | '/contracted-services'
-    | '/services'
-    | '/settings'
-    | '/clients/$id'
+    | '/_authenticated'
+    | '/_authenticated/billing'
+    | '/_authenticated/clients'
+    | '/_authenticated/contracted-services'
+    | '/_authenticated/services'
+    | '/_authenticated/settings'
+    | '/_authenticated/clients/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  BillingRoute: typeof BillingRoute
-  ClientsRoute: typeof ClientsRouteWithChildren
-  ContractedServicesRoute: typeof ContractedServicesRoute
-  ServicesRoute: typeof ServicesRoute
-  SettingsRoute: typeof SettingsRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -129,69 +133,92 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/billing': {
-      id: '/billing'
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/billing': {
+      id: '/_authenticated/billing'
       path: '/billing'
       fullPath: '/billing'
-      preLoaderRoute: typeof BillingRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedBillingRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/clients': {
-      id: '/clients'
+    '/_authenticated/clients': {
+      id: '/_authenticated/clients'
       path: '/clients'
       fullPath: '/clients'
-      preLoaderRoute: typeof ClientsRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedClientsRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/contracted-services': {
-      id: '/contracted-services'
+    '/_authenticated/contracted-services': {
+      id: '/_authenticated/contracted-services'
       path: '/contracted-services'
       fullPath: '/contracted-services'
-      preLoaderRoute: typeof ContractedServicesRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedContractedServicesRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/services': {
-      id: '/services'
+    '/_authenticated/services': {
+      id: '/_authenticated/services'
       path: '/services'
       fullPath: '/services'
-      preLoaderRoute: typeof ServicesRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedServicesRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/settings': {
-      id: '/settings'
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
       path: '/settings'
       fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/clients/$id': {
-      id: '/clients/$id'
+    '/_authenticated/clients/$id': {
+      id: '/_authenticated/clients/$id'
       path: '/$id'
       fullPath: '/clients/$id'
-      preLoaderRoute: typeof ClientsIdRouteImport
-      parentRoute: typeof ClientsRoute
+      preLoaderRoute: typeof AuthenticatedClientsIdRouteImport
+      parentRoute: typeof AuthenticatedClientsRoute
     }
   }
 }
 
-interface ClientsRouteChildren {
-  ClientsIdRoute: typeof ClientsIdRoute
+interface AuthenticatedClientsRouteChildren {
+  AuthenticatedClientsIdRoute: typeof AuthenticatedClientsIdRoute
 }
 
-const ClientsRouteChildren: ClientsRouteChildren = {
-  ClientsIdRoute: ClientsIdRoute,
+const AuthenticatedClientsRouteChildren: AuthenticatedClientsRouteChildren = {
+  AuthenticatedClientsIdRoute: AuthenticatedClientsIdRoute,
 }
 
-const ClientsRouteWithChildren =
-  ClientsRoute._addFileChildren(ClientsRouteChildren)
+const AuthenticatedClientsRouteWithChildren =
+  AuthenticatedClientsRoute._addFileChildren(AuthenticatedClientsRouteChildren)
+
+interface AuthenticatedRouteChildren {
+  AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
+  AuthenticatedClientsRoute: typeof AuthenticatedClientsRouteWithChildren
+  AuthenticatedContractedServicesRoute: typeof AuthenticatedContractedServicesRoute
+  AuthenticatedServicesRoute: typeof AuthenticatedServicesRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedBillingRoute: AuthenticatedBillingRoute,
+  AuthenticatedClientsRoute: AuthenticatedClientsRouteWithChildren,
+  AuthenticatedContractedServicesRoute: AuthenticatedContractedServicesRoute,
+  AuthenticatedServicesRoute: AuthenticatedServicesRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  BillingRoute: BillingRoute,
-  ClientsRoute: ClientsRouteWithChildren,
-  ContractedServicesRoute: ContractedServicesRoute,
-  ServicesRoute: ServicesRoute,
-  SettingsRoute: SettingsRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
