@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AppLayout } from "@/components/AppLayout";
 import { useServices } from "@/hooks/use-services";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -109,6 +111,8 @@ function ServicesPage() {
   };
 
   return (
+    <AppLayout>
+
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold flex items-center gap-2">
