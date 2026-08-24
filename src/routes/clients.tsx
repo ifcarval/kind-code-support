@@ -81,7 +81,7 @@ function ClientsPage() {
     email: "",
     telefone: "",
     status: "ativo",
-    tipo_pessoa: "J"
+    tipo_pessoa: "PJ"
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -110,7 +110,7 @@ function ClientsPage() {
         email: client.email || "",
         telefone: client.telefone || "",
         status: client.status || "ativo",
-        tipo_pessoa: client.tipo_pessoa || "J"
+        tipo_pessoa: client.tipo_pessoa === "F" ? "PF" : (client.tipo_pessoa === "J" ? "PJ" : (client.tipo_pessoa || "PJ"))
       });
     } else {
       setEditingClient(null);
@@ -121,7 +121,7 @@ function ClientsPage() {
         email: "",
         telefone: "",
         status: "ativo",
-        tipo_pessoa: "J"
+        tipo_pessoa: "PJ"
       });
     }
     setIsModalOpen(true);
@@ -324,13 +324,14 @@ function ClientsPage() {
                 <Select 
                   value={formData.tipo_pessoa} 
                   onValueChange={(v) => setFormData({...formData, tipo_pessoa: v})}
+                  required
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="J">Jurídica (CNPJ)</SelectItem>
-                    <SelectItem value="F">Física (CPF)</SelectItem>
+                    <SelectItem value="PJ">Pessoa Jurídica (PJ)</SelectItem>
+                    <SelectItem value="PF">Pessoa Física (PF)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
