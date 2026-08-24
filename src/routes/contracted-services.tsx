@@ -325,6 +325,99 @@ function ContractedServicesPage() {
           )}
         </CardContent>
       </Card>
+      <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileUp className="h-5 w-5" />
+              Importação Inteligente de Contrato
+            </DialogTitle>
+            <DialogDescription>
+              A nossa IA irá extrair automaticamente os dados do contrato para facilitar o cadastro.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            {importStep === 'upload' && (
+              <div 
+                className="border-2 border-dashed rounded-lg p-12 text-center hover:bg-accent/50 cursor-pointer transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  ref={fileInputRef} 
+                  onChange={handleFileUpload}
+                  accept=".pdf,image/*"
+                />
+                <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">Clique para fazer upload</h3>
+                <p className="text-sm text-muted-foreground">PDF ou Imagem (Máx 5MB)</p>
+              </div>
+            )}
+
+            {importStep === 'processing' && (
+              <div className="text-center p-12 space-y-4">
+                <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
+                <h3 className="text-lg font-medium">Extraindo informações com IA...</h3>
+                <p className="text-sm text-muted-foreground">Estamos analisando o documento para você.</p>
+              </div>
+            )}
+
+            {importStep === 'review' && extractedData && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label>Cliente</Label>
+                    <Input value={extractedData.clientName} readOnly className="bg-muted" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>CPF/CNPJ</Label>
+                    <Input value={extractedData.cpfCnpj} readOnly className="bg-muted" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Serviço Identificado</Label>
+                    <Input value={extractedData.serviceName} readOnly className="bg-muted" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Valor Mensal</Label>
+                    <Input value={formatCurrency(extractedData.monthlyValue)} readOnly className="bg-muted" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Dia de Vencimento</Label>
+                    <Input value={`Dia ${extractedData.dueDay}`} readOnly className="bg-muted" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Data de Início</Label>
+                    <Input value={format(new Date(extractedData.startDate), "dd/MM/yyyy")} readOnly className="bg-muted" />
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800 flex gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-blue-600 shrink-0" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">Pronto para importar!</h4>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      O cliente e o contrato serão criados automaticamente. Você poderá editá-los depois.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            {importStep === 'review' ? (
+              <div className="flex gap-2 w-full justify-end">
+                <Button variant="outline" onClick={() => setImportStep('upload')}>Tentar Outro</Button>
+                <Button onClick={handleConfirmImport}>Confirmar e Ativar Contrato</Button>
+              </div>
+            ) : (
+              <Button variant="ghost" onClick={() => setIsImportModalOpen(false)}>Cancelar</Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
