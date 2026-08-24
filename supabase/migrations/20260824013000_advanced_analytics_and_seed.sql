@@ -121,39 +121,49 @@ WHERE i.status = 'pendente'
   AND i.data_vencimento <= current_date + interval '30 days';
 
 -- 3. Demo Data Expansion
-DO 25165
+DO $$
 DECLARE
     v_company_id UUID;
     v_client_id UUID;
     v_service_id UUID;
     v_invoice_id UUID;
-    v_service_name TEXT;
+    v_service_record RECORD;
     i INTEGER;
     v_month_start DATE;
 BEGIN
     SELECT id INTO v_company_id FROM public.companies LIMIT 1;
     
     IF v_company_id IS NOT NULL THEN
+        -- Create Services
         FOR i IN 1..8 LOOP
             INSERT INTO public.services (company_id, nome, descricao, valor_padrao, recorrente, ativo)
             VALUES (v_company_id, 'Serviço Premium ' || i, 'Descrição do serviço ' || i, 150.00 * i, true, true)
             ON CONFLICT (company_id, nome) DO NOTHING;
         END LOOP;
 
+        -- Create Clients
         FOR i IN 1..10 LOOP
             INSERT INTO public.clients (company_id, nome_razao_social, email, cpf_cnpj, telefone)
             VALUES (v_company_id, 'Cliente Fictício ' || i, 'cliente' || i || '@exemplo.com', '1234567890' || i, '119999999' || i)
             ON CONFLICT (company_id, cpf_cnpj) DO NOTHING;
         END LOOP;
 
+        -- Create Client Services
         FOR v_client_id IN (SELECT id FROM public.clients WHERE company_id = v_company_id) LOOP
-            FOR v_service_id, v_service_name IN (SELECT id, nome FROM public.services WHERE company_id = v_company_id ORDER BY random() LIMIT 2) LOOP
-                INSERT INTO public.client_services (company_id, client_id, service_id, nome_servico, valor_mensal, status, data_inicio)
-                VALUES (v_company_id, v_client_id, v_service_id, v_service_name, (SELECT valor_padrao FROM public.services WHERE id = v_service_id), 'ativo', now())
+            FOR v_service_record IN (SELECT id, nome FROM public.services WHERE company_id = v_company_id ORDER BY random() LIMIT 2) LOOP
+                INSERT INTO public.client_services (
+                    company_id, client_id, service_id, nome_servico, valor_mensal, tipo_cobranca, data_inicio, status
+                )
+                VALUES (
+                    v_company_id, v_client_id, v_service_record.id, v_service_record.nome, 
+                    (SELECT valor_padrao FROM public.services WHERE id = v_service_record.id), 
+                    'mensal', current_date, 'ativo'
+                )
                 ON CONFLICT DO NOTHING;
             END LOOP;
         END LOOP;
 
+        -- Create Invoices for 12 months
         FOR i IN 0..11 LOOP
             v_month_start := (date_trunc('month', now()) - (i || ' months')::interval)::date;
             
@@ -184,4 +194,4 @@ BEGIN
             END LOOP;
         END LOOP;
     END IF;
-END 25165;
+END $$;
