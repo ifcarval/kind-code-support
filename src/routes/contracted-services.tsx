@@ -20,7 +20,8 @@ import {
   Upload,
   FileUp,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Plus
 } from "lucide-react";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
