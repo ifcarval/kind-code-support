@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useBilling } from "@/hooks/use-billing";
 import { useClients } from "@/hooks/use-clients";
+import { useProfile } from "@/hooks/use-profile";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -57,10 +59,53 @@ function BillingPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [clientFilter, setClientFilter] = useState("todos");
+  const { profile } = useProfile();
   
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [formData, setFormData] = useState<any>({
+    client_id: "",
+    data_vencimento: new Date().toISOString().split('T')[0],
+    valor_original: 0,
+    descricao: "",
+    competencia: format(new Date(), "MM/yyyy")
+  });
+
+  const handleOpenForm = () => {
+    setFormData({
+      client_id: "",
+      data_vencimento: new Date().toISOString().split('T')[0],
+      valor_original: 0,
+      descricao: "",
+      competencia: format(new Date(), "MM/yyyy")
+    });
+    setIsFormModalOpen(true);
+  };
+
+  const handleSaveInvoice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile?.company_id) return;
+
+    const invoiceData = {
+      ...formData,
+      company_id: profile.company_id,
+      valor_final: formData.valor_original,
+      status: 'pendente',
+      numero_fatura: `MAN-${Date.now().toString().slice(-6)}`
+    };
+
+    const { error } = await supabase.from('invoices').insert(invoiceData);
+
+    if (error) {
+      toast.error("Erro ao criar fatura: " + error.message);
+    } else {
+      toast.success("Fatura manual criada com sucesso!");
+      setIsFormModalOpen(false);
+      fetchInvoices();
+    }
+  };
 
   useEffect(() => {
     fetchInvoices({
@@ -158,7 +203,7 @@ function BillingPage() {
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
             Gerar Mensais
           </Button>
-          <Button className="gap-2 flex-1 md:flex-none">
+          <Button className="gap-2 flex-1 md:flex-none" onClick={() => handleOpenForm()}>
             <Plus className="h-4 w-4" />
             Nova Fatura
           </Button>
@@ -502,6 +547,79 @@ function BillingPage() {
             <DialogFooter className="pt-4">
               <Button variant="outline" type="button" onClick={() => setPaymentOpen(false)}>Cancelar</Button>
               <Button type="submit">Confirmar Pagamento</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isFormModalOpen} onOpenChange={setIsFormModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nova Fatura Manual</DialogTitle>
+            <DialogDescription>
+              Crie uma fatura avulsa para um cliente.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveInvoice} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Cliente</label>
+              <Select 
+                value={formData.client_id} 
+                onValueChange={(v) => setFormData({...formData, client_id: v})}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome_razao_social}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Descrição / Serviço</label>
+              <Input 
+                value={formData.descricao} 
+                onChange={(e) => setFormData({...formData, descricao: e.target.value})}
+                placeholder="Ex: Consultoria Extra"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Valor</label>
+                <Input 
+                  type="number"
+                  step="0.01"
+                  value={formData.valor_original} 
+                  onChange={(e) => setFormData({...formData, valor_original: parseFloat(e.target.value)})}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Vencimento</label>
+                <Input 
+                  type="date"
+                  value={formData.data_vencimento} 
+                  onChange={(e) => setFormData({...formData, data_vencimento: e.target.value})}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Competência (MM/AAAA)</label>
+              <Input 
+                value={formData.competencia} 
+                onChange={(e) => setFormData({...formData, competencia: e.target.value})}
+                placeholder="08/2026"
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsFormModalOpen(false)}>Cancelar</Button>
+              <Button type="submit">Gerar Fatura</Button>
             </DialogFooter>
           </form>
         </DialogContent>

@@ -8,15 +8,40 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Plus, Users, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useProfile } from "@/hooks/use-profile";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter,
+  DialogDescription 
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/clients")({
   component: ClientsPage,
 });
 
 function ClientsPage() {
-  const { clients, loading, fetchClients, deleteClient } = useClients();
+  const { clients, loading, fetchClients, deleteClient, createClient, updateClient } = useClients();
+  const { profile } = useProfile();
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+
+  // Form State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<any>(null);
+  const [formData, setFormData] = useState<any>({
+    nome_razao_social: "",
+    nome_fantasia: "",
+    cpf_cnpj: "",
+    email: "",
+    telefone: "",
+    status: "ativo",
+    tipo_pessoa: "J"
+  });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +56,57 @@ function ClientsPage() {
       } else {
         toast.success("Cliente excluído com sucesso.");
       }
+    }
+  };
+
+  const handleOpenModal = (client?: any) => {
+    if (client) {
+      setEditingClient(client);
+      setFormData({
+        nome_razao_social: client.nome_razao_social || "",
+        nome_fantasia: client.nome_fantasia || "",
+        cpf_cnpj: client.cpf_cnpj || "",
+        email: client.email || "",
+        telefone: client.telefone || "",
+        status: client.status || "ativo",
+        tipo_pessoa: client.tipo_pessoa || "J"
+      });
+    } else {
+      setEditingClient(null);
+      setFormData({
+        nome_razao_social: "",
+        nome_fantasia: "",
+        cpf_cnpj: "",
+        email: "",
+        telefone: "",
+        status: "ativo",
+        tipo_pessoa: "J"
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile?.company_id) return;
+
+    const data = {
+      ...formData,
+      company_id: profile.company_id
+    };
+
+    let result;
+    if (editingClient) {
+      result = await updateClient(editingClient.id, data);
+    } else {
+      result = await createClient(data);
+    }
+
+    if (result.error) {
+      toast.error("Erro ao salvar cliente: " + result.error.message);
+    } else {
+      toast.success(editingClient ? "Cliente atualizado!" : "Cliente criado!");
+      setIsModalOpen(false);
     }
   };
 
@@ -51,7 +127,7 @@ function ClientsPage() {
           <Users className="h-6 w-6" />
           Clientes
         </h1>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => handleOpenModal()}>
           <Plus className="h-4 w-4" />
           Novo Cliente
         </Button>
@@ -120,7 +196,12 @@ function ClientsPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" title="Editar">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          title="Editar"
+                          onClick={() => handleOpenModal(client)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button 
@@ -148,6 +229,93 @@ function ClientsPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingClient ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
+            <DialogDescription>
+              Preencha os dados básicos do cliente.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="nome">Nome / Razão Social</Label>
+              <Input 
+                id="nome" 
+                value={formData.nome_razao_social} 
+                onChange={(e) => setFormData({...formData, nome_razao_social: e.target.value})}
+                required 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="documento">CPF / CNPJ</Label>
+              <Input 
+                id="documento" 
+                value={formData.cpf_cnpj} 
+                onChange={(e) => setFormData({...formData, cpf_cnpj: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input 
+                  id="email" 
+                  type="email"
+                  value={formData.email} 
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="telefone">Telefone</Label>
+                <Input 
+                  id="telefone" 
+                  value={formData.telefone} 
+                  onChange={(e) => setFormData({...formData, telefone: e.target.value})}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="tipo">Tipo</Label>
+                <Select 
+                  value={formData.tipo_pessoa} 
+                  onValueChange={(v) => setFormData({...formData, tipo_pessoa: v})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="J">Jurídica (CNPJ)</SelectItem>
+                    <SelectItem value="F">Física (CPF)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select 
+                  value={formData.status} 
+                  onValueChange={(v) => setFormData({...formData, status: v})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="inativo">Inativo</SelectItem>
+                    <SelectItem value="prospect">Prospect</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+              <Button type="submit">Salvar</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+

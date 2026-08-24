@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Loader2, 
   Briefcase, 
@@ -20,7 +21,8 @@ import {
   Upload,
   FileUp,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Plus
 } from "lucide-react";
 import { format, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -51,7 +53,8 @@ function ContractedServicesPage() {
     reactivateContract, 
     cancelContract,
     generateManualInvoice,
-    createContract
+    createContract,
+    updateContractedService
   } = useContractedServices();
   
   const { clients } = useClients();
@@ -60,6 +63,67 @@ function ContractedServicesPage() {
   
   const [searchTerm, setSearchTerm] = useState("");
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [editingContract, setEditingContract] = useState<any>(null);
+  const [formData, setFormData] = useState<any>({
+    client_id: "",
+    service_id: "",
+    valor_mensal: 0,
+    dia_vencimento: 10,
+    data_inicio: new Date().toISOString().split('T')[0],
+    tipo_cobranca: 'mensal'
+  });
+
+  const handleOpenForm = (contract?: any) => {
+    if (contract) {
+      setEditingContract(contract);
+      setFormData({
+        client_id: contract.client_id,
+        service_id: contract.service_id,
+        valor_mensal: contract.valor_mensal,
+        dia_vencimento: contract.dia_vencimento,
+        data_inicio: contract.data_inicio,
+        tipo_cobranca: contract.tipo_cobranca
+      });
+    } else {
+      setEditingContract(null);
+      setFormData({
+        client_id: "",
+        service_id: "",
+        valor_mensal: 0,
+        dia_vencimento: 10,
+        data_inicio: new Date().toISOString().split('T')[0],
+        tipo_cobranca: 'mensal'
+      });
+    }
+    setIsFormModalOpen(true);
+  };
+
+  const handleSaveContract = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile?.company_id) return;
+
+    const data = {
+      ...formData,
+      nome_servico: services.find(s => s.id === formData.service_id)?.nome || "Serviço",
+      company_id: profile.company_id,
+      status: 'ativo'
+    };
+
+    let result;
+    if (editingContract) {
+      result = await updateContractedService(editingContract.id, data);
+    } else {
+      result = await createContract(data);
+    }
+
+    if (result.error) toast.error("Erro ao salvar contrato: " + result.error.message);
+    else {
+      toast.success(editingContract ? "Contrato atualizado!" : "Contrato criado!");
+      setIsFormModalOpen(false);
+    }
+  };
+  
   const [isUploading, setIsUploading] = useState(false);
   const [importStep, setImportStep] = useState<'upload' | 'processing' | 'review'>('upload');
   const [extractedData, setExtractedData] = useState<any>(null);
@@ -107,7 +171,6 @@ function ContractedServicesPage() {
   const handleConfirmImport = async () => {
     if (!profile?.company_id || !extractedData) return;
     
-    // Tenta encontrar o cliente pelo nome ou cria um mockup (neste MVP assumimos vincular ao primeiro cliente encontrado ou criar um novo)
     let clientId = clients.find(c => c.nome_razao_social.toLowerCase().includes(extractedData?.clientName?.toLowerCase() || ""))?.id;
     
     if (!clientId) {
@@ -125,7 +188,6 @@ function ContractedServicesPage() {
       clientId = newClient.id;
     }
 
-    // Tenta encontrar o serviço
     let serviceId = services.find(s => s.nome.toLowerCase().includes(extractedData?.serviceName?.toLowerCase() || ""))?.id;
     if (!serviceId && services && services.length > 0) {
       const firstService = services[0];
@@ -222,11 +284,17 @@ function ContractedServicesPage() {
           <Briefcase className="h-6 w-6" />
           Serviços Contratados
         </h1>
-        <Button onClick={() => setIsImportModalOpen(true)} className="gap-2">
-          <FileUp className="h-4 w-4" />
-          Importar Contrato (IA)
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => handleOpenForm()} className="gap-2" variant="outline">
+            <Plus className="h-4 w-4" /> Novo
+          </Button>
+          <Button onClick={() => setIsImportModalOpen(true)} className="gap-2">
+            <FileUp className="h-4 w-4" />
+            Importar Contrato (IA)
+          </Button>
+        </div>
       </div>
+
 
       <Card>
         <CardHeader>
@@ -297,7 +365,12 @@ function ContractedServicesPage() {
                         >
                           {loadingManual === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Receipt className="h-4 w-4" />}
                         </Button>
-                        <Button variant="ghost" size="icon" title="Editar">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          title="Editar"
+                          onClick={() => handleOpenForm(s)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button 
@@ -418,6 +491,98 @@ function ContractedServicesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={isFormModalOpen} onOpenChange={setIsFormModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingContract ? "Editar Contrato" : "Novo Contrato"}</DialogTitle>
+            <DialogDescription>
+              Vincule um serviço a um cliente e defina as condições.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveContract} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Cliente</Label>
+              <Select 
+                value={formData.client_id} 
+                onValueChange={(v) => setFormData({...formData, client_id: v})}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome_razao_social}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Serviço do Catálogo</Label>
+              <Select 
+                value={formData.service_id} 
+                onValueChange={(v) => {
+                  const s = services.find(srv => srv.id === v);
+                  setFormData({
+                    ...formData, 
+                    service_id: v,
+                    valor_mensal: s?.valor_padrao || formData.valor_mensal,
+                    tipo_cobranca: s?.tipo_cobranca || formData.tipo_cobranca
+                  });
+                }}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o serviço" />
+                </SelectTrigger>
+                <SelectContent>
+                  {services.map(s => (
+                    <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Valor Mensal</Label>
+                <Input 
+                  type="number"
+                  step="0.01"
+                  value={formData.valor_mensal} 
+                  onChange={(e) => setFormData({...formData, valor_mensal: parseFloat(e.target.value)})}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Dia Vencimento</Label>
+                <Input 
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={formData.dia_vencimento} 
+                  onChange={(e) => setFormData({...formData, dia_vencimento: parseInt(e.target.value)})}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Data de Início</Label>
+              <Input 
+                type="date"
+                value={formData.data_inicio} 
+                onChange={(e) => setFormData({...formData, data_inicio: e.target.value})}
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsFormModalOpen(false)}>Cancelar</Button>
+              <Button type="submit">Salvar Contrato</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
