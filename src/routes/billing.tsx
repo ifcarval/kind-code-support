@@ -158,7 +158,7 @@ function BillingPage() {
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
             Gerar Mensais
           </Button>
-          <Button className="gap-2 flex-1 md:flex-none">
+          <Button className="gap-2 flex-1 md:flex-none" onClick={() => handleOpenForm()}>
             <Plus className="h-4 w-4" />
             Nova Fatura
           </Button>
