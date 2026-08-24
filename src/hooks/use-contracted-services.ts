@@ -87,5 +87,6 @@ export function useContractedServices() {
     pauseContract,
     reactivateContract,
     generateManualInvoice,
+    createContract,
   };
 }
