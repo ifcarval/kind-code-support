@@ -208,8 +208,12 @@ export type Database = {
       }
       companies: {
         Row: {
+          address: string | null
           cnpj: string | null
           created_at: string | null
+          currency: string | null
+          date_format: string | null
+          due_day_default: number | null
           email: string | null
           endereco: string | null
           id: string
@@ -218,8 +222,12 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          address?: string | null
           cnpj?: string | null
           created_at?: string | null
+          currency?: string | null
+          date_format?: string | null
+          due_day_default?: number | null
           email?: string | null
           endereco?: string | null
           id?: string
@@ -228,8 +236,12 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          address?: string | null
           cnpj?: string | null
           created_at?: string | null
+          currency?: string | null
+          date_format?: string | null
+          due_day_default?: number | null
           email?: string | null
           endereco?: string | null
           id?: string
@@ -472,6 +484,7 @@ export type Database = {
           created_at: string | null
           email: string
           empresa: string | null
+          full_name: string | null
           id: string
           nome: string
           telefone: string | null
@@ -484,6 +497,7 @@ export type Database = {
           created_at?: string | null
           email: string
           empresa?: string | null
+          full_name?: string | null
           id: string
           nome: string
           telefone?: string | null
@@ -496,6 +510,7 @@ export type Database = {
           created_at?: string | null
           email?: string
           empresa?: string | null
+          full_name?: string | null
           id?: string
           nome?: string
           telefone?: string | null
