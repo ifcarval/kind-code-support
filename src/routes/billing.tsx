@@ -728,7 +728,5 @@ function BillingPage() {
 
 
 // Helper function for class merging
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
-}
+
 

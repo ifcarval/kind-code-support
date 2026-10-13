@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
-
 import { useClients } from "@/hooks/use-clients";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -66,10 +65,6 @@ function ClientsPage() {
   const { clients, loading, fetchClients, deleteClient, createClient, updateClient } = useClients();
   const { profile } = useProfile();
   const [searchTerm, setSearchTerm] = useState("");
-  const navigate = useNavigate();
-
-
-
 
   // Form State
   const [isModalOpen, setIsModalOpen] = useState(false);

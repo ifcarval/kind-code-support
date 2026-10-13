@@ -33,8 +33,6 @@ export function AppLayout({ children }: AppLayoutProps) {
     navigate({ to: "/" });
   };
 
-  
-
   const allNavItems = [
     { label: "Dashboard", icon: LayoutDashboard, to: "/" },
     { label: "Faturamento", icon: Receipt, to: "/billing" },

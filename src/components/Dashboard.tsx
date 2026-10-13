@@ -1,6 +1,3 @@
-import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
 import { cn } from "@/lib/utils";
 import { 

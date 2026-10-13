@@ -67,9 +67,6 @@ function ServicesPage() {
   const { services, loading, createService, updateService } = useServices();
   const { profile } = useProfile();
 
-
-
-
   // Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<any>(null);
