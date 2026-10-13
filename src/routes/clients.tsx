@@ -63,20 +63,19 @@ function ClientsGuard() {
 
 function ClientsPage() {
   const { clients, loading, fetchClients, deleteClient, createClient, updateClient } = useClients();
-  const { profile } = useProfile();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Form State
+  // Form State corresponding to customers table schema
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<any>(null);
   const [formData, setFormData] = useState<any>({
-    nome_razao_social: "",
-    nome_fantasia: "",
-    cpf_cnpj: "",
+    name: "",
+    document: "",
     email: "",
-    telefone: "",
-    status: "ativo",
-    tipo_pessoa: "PJ"
+    phone: "",
+    whatsapp: "",
+    address: "",
+    status: "ativo"
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -99,24 +98,24 @@ function ClientsPage() {
     if (client) {
       setEditingClient(client);
       setFormData({
-        nome_razao_social: client.nome_razao_social || "",
-        nome_fantasia: client.nome_fantasia || "",
-        cpf_cnpj: client.cpf_cnpj || "",
+        name: client.name || "",
+        document: client.document || "",
         email: client.email || "",
-        telefone: client.telefone || "",
-        status: client.status || "ativo",
-        tipo_pessoa: client.tipo_pessoa === "F" ? "PF" : (client.tipo_pessoa === "J" ? "PJ" : (client.tipo_pessoa || "PJ"))
+        phone: client.phone || "",
+        whatsapp: client.whatsapp || "",
+        address: client.address || "",
+        status: client.status || "ativo"
       });
     } else {
       setEditingClient(null);
       setFormData({
-        nome_razao_social: "",
-        nome_fantasia: "",
-        cpf_cnpj: "",
+        name: "",
+        document: "",
         email: "",
-        telefone: "",
-        status: "ativo",
-        tipo_pessoa: "PJ"
+        phone: "",
+        whatsapp: "",
+        address: "",
+        status: "ativo"
       });
     }
     setIsModalOpen(true);
@@ -124,18 +123,12 @@ function ClientsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile?.company_id) return;
-
-    const data = {
-      ...formData,
-      company_id: profile.company_id
-    };
 
     let result;
     if (editingClient) {
-      result = await updateClient(editingClient.id, data);
+      result = await updateClient(editingClient.id, formData);
     } else {
-      result = await createClient(data);
+      result = await createClient(formData);
     }
 
     if (result.error) {
@@ -153,210 +146,207 @@ function ClientsPage() {
       bloqueado: "destructive",
       prospect: "outline",
     };
-    return <Badge variant={variants[status || ""] || "default"}>{status || "N/A"}</Badge>;
+    return <Badge variant={variants[status || ""] || "default"}>{status || "ativo"}</Badge>;
   };
 
   return (
     <AppLayout>
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Users className="h-6 w-6" />
+            Clientes
+          </h1>
+          <Button className="gap-2" onClick={() => handleOpenModal()}>
+            <Plus className="h-4 w-4" />
+            Novo Cliente
+          </Button>
+        </div>
 
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Users className="h-6 w-6" />
-          Clientes
-        </h1>
-        <Button className="gap-2" onClick={() => handleOpenModal()}>
-          <Plus className="h-4 w-4" />
-          Novo Cliente
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
-            <CardTitle>Listagem de Clientes</CardTitle>
-            <form onSubmit={handleSearch} className="flex gap-2 w-full md:w-auto">
-              <div className="relative w-full md:w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Buscar clientes..."
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <Button type="submit" variant="secondary">Buscar</Button>
-              <Button type="button" variant="outline" size="icon">
-                <Filter className="h-4 w-4" />
-              </Button>
-            </form>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
+              <CardTitle>Listagem de Clientes</CardTitle>
+              <form onSubmit={handleSearch} className="flex gap-2 w-full md:w-auto">
+                <div className="relative w-full md:w-64">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Buscar clientes..."
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Button type="submit" variant="secondary">Buscar</Button>
+                <Button type="button" variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </form>
             </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome / Razão Social</TableHead>
-                  <TableHead>CPF/CNPJ</TableHead>
-                  <TableHead>Contato</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clients.map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell className="font-medium">
-                      <div>{client.nome_razao_social}</div>
-                      {client.nome_fantasia && (
-                        <div className="text-xs text-muted-foreground">{client.nome_fantasia}</div>
-                      )}
-                    </TableCell>
-                    <TableCell>{client.cpf_cnpj || "N/A"}</TableCell>
-                    <TableCell>
-                      <div className="text-sm">{client.email}</div>
-                      <div className="text-xs text-muted-foreground">{client.telefone}</div>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(client.status)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          title="Visualizar Detalhes"
-                          onClick={() => navigate({ to: `/clients/${client.id}` })}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          title="Editar"
-                          onClick={() => handleOpenModal(client)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="text-destructive" 
-                          title="Excluir"
-                          onClick={() => handleDelete(client.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {clients.length === 0 && (
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      Nenhum cliente encontrado.
-                    </TableCell>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Documento (CPF/CNPJ)</TableHead>
+                    <TableHead>Contato</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {clients.map((client) => (
+                    <TableRow key={client.id}>
+                      <TableCell className="font-medium">
+                        <div>{client.name}</div>
+                        {client.address && (
+                          <div className="text-xs text-muted-foreground truncate max-w-xs">{client.address}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>{client.document || "N/A"}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">{client.email || "-"}</div>
+                        <div className="text-xs text-muted-foreground">{client.phone || client.whatsapp || "-"}</div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(client.status)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            title="Visualizar Detalhes"
+                            onClick={() => navigate({ to: `/clients/${client.id}` })}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            title="Editar"
+                            onClick={() => handleOpenModal(client)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-destructive" 
+                            title="Excluir"
+                            onClick={() => handleDelete(client.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {clients.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        Nenhum cliente encontrado.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editingClient ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
-            <DialogDescription>
-              Preencha os dados básicos do cliente.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="nome">Nome / Razão Social</Label>
-              <Input 
-                id="nome" 
-                value={formData.nome_razao_social} 
-                onChange={(e) => setFormData({...formData, nome_razao_social: e.target.value})}
-                required 
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="documento">CPF / CNPJ</Label>
-              <Input 
-                id="documento" 
-                value={formData.cpf_cnpj} 
-                onChange={(e) => setFormData({...formData, cpf_cnpj: e.target.value})}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{editingClient ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
+              <DialogDescription>
+                Preencha os dados do cliente.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="name">Nome</Label>
                 <Input 
-                  id="email" 
-                  type="email"
-                  value={formData.email} 
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  id="name" 
+                  value={formData.name} 
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  required 
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="telefone">Telefone</Label>
+                <Label htmlFor="document">Documento (CPF / CNPJ)</Label>
                 <Input 
-                  id="telefone" 
-                  value={formData.telefone} 
-                  onChange={(e) => setFormData({...formData, telefone: e.target.value})}
+                  id="document" 
+                  value={formData.document} 
+                  onChange={(e) => setFormData({...formData, document: e.target.value})}
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="tipo">Tipo</Label>
-                <Select 
-                  value={formData.tipo_pessoa} 
-                  onValueChange={(v) => setFormData({...formData, tipo_pessoa: v})}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PJ">Pessoa Jurídica (PJ)</SelectItem>
-                    <SelectItem value="PF">Pessoa Física (PF)</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input 
+                    id="email" 
+                    type="email"
+                    value={formData.email} 
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telefone</Label>
+                  <Input 
+                    id="phone" 
+                    value={formData.phone} 
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="whatsapp">WhatsApp</Label>
+                  <Input 
+                    id="whatsapp" 
+                    value={formData.whatsapp} 
+                    onChange={(e) => setFormData({...formData, whatsapp: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select 
+                    value={formData.status || "ativo"} 
+                    onValueChange={(v) => setFormData({...formData, status: v})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ativo">Ativo</SelectItem>
+                      <SelectItem value="inativo">Inativo</SelectItem>
+                      <SelectItem value="bloqueado">Bloqueado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select 
-                  value={formData.status} 
-                  onValueChange={(v) => setFormData({...formData, status: v})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ativo">Ativo</SelectItem>
-                    <SelectItem value="inativo">Inativo</SelectItem>
-                    <SelectItem value="prospect">Prospect</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="address">Endereço</Label>
+                <Input 
+                  id="address" 
+                  value={formData.address} 
+                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                />
               </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-              <Button type="submit">Salvar</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+                <Button type="submit">Salvar</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
 }
-
-

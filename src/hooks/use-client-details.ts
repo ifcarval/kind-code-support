@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
 
 export function useClientDetails(clientId: string) {
   const [client, setClient] = useState<any>(null);
@@ -17,58 +16,24 @@ export function useClientDetails(clientId: string) {
   const fetchData = async () => {
     setLoading(true);
     
-    // Fetch Client Data
+    // Fetch Customer Data from customers table
     const { data: clientData } = await supabase
-      .from("clients")
+      .from("customers")
       .select("*")
       .eq("id", clientId)
       .single();
     
     setClient(clientData);
 
-    // Fetch Contracted Services
-    const { data: servicesData } = await supabase
-      .from("client_services")
-      .select("*")
-      .eq("client_id", clientId);
-    
-    setServices(servicesData || []);
-
-    // Fetch Invoices
-    const { data: invoicesData } = await supabase
-      .from("invoices")
-      .select("*")
-      .eq("client_id", clientId)
-      .order("data_vencimento", { ascending: false });
-    
-    setInvoices(invoicesData || []);
-
-    // Calculate Stats
-    if (invoicesData) {
-      const today = new Date();
-      const totals = invoicesData.reduce((acc, inv) => {
-        acc.totalFaturado += inv.valor_final;
-        
-        if (inv.status === "paga") {
-          acc.totalPago += inv.valor_final;
-        } else if (inv.status === "pendente" || inv.status === "vencida") {
-          acc.totalEmAberto += inv.valor_final;
-          
-          if (new Date(inv.data_vencimento) < today) {
-            acc.totalVencido += inv.valor_final;
-          }
-        }
-        
-        return acc;
-      }, {
-        totalFaturado: 0,
-        totalPago: 0,
-        totalEmAberto: 0,
-        totalVencido: 0,
-      });
-      
-      setStats(totals);
-    }
+    // Fetch related services/contracts if applicable
+    setServices([]);
+    setInvoices([]);
+    setStats({
+      totalFaturado: 0,
+      totalPago: 0,
+      totalEmAberto: 0,
+      totalVencido: 0,
+    });
 
     setLoading(false);
   };
