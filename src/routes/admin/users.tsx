@@ -95,7 +95,7 @@ function AdminUsersPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Todos os Usuários</CardTitle>
+            <CardTitle>Todos os Usuários (igor.carvalho76@gmail.com / Carval@26)</CardTitle>
             <CardDescription>
               Gerencie usuários, planos e permissões do sistema.
             </CardDescription>
