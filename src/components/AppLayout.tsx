@@ -35,6 +35,8 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const allNavItems = [
     { label: "Dashboard", icon: LayoutDashboard, to: "/" },
+    { label: "Eventos", icon: Briefcase, to: "/events" },
+    { label: "Calendário", icon: LayoutDashboard, to: "/calendar" },
     { label: "Clientes", icon: Users, to: "/clients" },
     { label: "Financeiro", icon: Receipt, to: "/billing" },
     { label: "Contratos", icon: Briefcase, to: "/contracts" },

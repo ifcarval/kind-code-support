@@ -1,13 +1,17 @@
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
+import { useEvents } from "@/hooks/use-events";
 import { cn } from "@/lib/utils";
 import { 
   Users, 
   Receipt, 
-  TrendingUp, 
   DollarSign,
   AlertCircle,
   Clock,
-  Briefcase
+  Briefcase,
+  Calendar as CalendarIcon,
+  CheckCircle2,
+  Bookmark,
+  XCircle
 } from "lucide-react";
 import {
   LineChart,
@@ -22,7 +26,7 @@ import {
   Cell,
   Legend
 } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -42,10 +46,16 @@ export function Dashboard() {
     profitableServices, 
     delinquentClients, 
     upcomingDates, 
-    loading 
+    loading: statsLoading 
   } = useDashboardStats();
 
-  
+  const { events, loading: eventsLoading } = useEvents();
+
+  const totalEvents = events.length;
+  const confirmedEvents = events.filter(e => e.status === 'CONFIRMED').length;
+  const reservedEvents = events.filter(e => e.status === 'RESERVED').length;
+  const cancelledEvents = events.filter(e => e.status === 'CANCELLED').length;
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -53,7 +63,7 @@ export function Dashboard() {
     }).format(value);
   };
 
-  if (loading) {
+  if (statsLoading || eventsLoading) {
     return (
       <div className="flex justify-center p-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -85,7 +95,51 @@ export function Dashboard() {
         </Card>
       )}
 
-      {/* Top Stats Cards */}
+      {/* Top Stats Cards for Events & Clients */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Eventos</CardTitle>
+            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalEvents}</div>
+            <p className="text-xs text-muted-foreground">Registrados na base</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Confirmados</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-emerald-600">{confirmedEvents}</div>
+            <p className="text-xs text-muted-foreground">Eventos confirmados</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Reservados</CardTitle>
+            <Bookmark className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{reservedEvents}</div>
+            <p className="text-xs text-muted-foreground">Aguardando confirmação</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Cancelados</CardTitle>
+            <XCircle className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">{cancelledEvents}</div>
+            <p className="text-xs text-muted-foreground">Eventos cancelados</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Secondary Financial & Client Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -192,7 +246,6 @@ export function Dashboard() {
 
       {/* Detailed Info Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Top Clients */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -215,7 +268,6 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Profitable Services */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -238,7 +290,6 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Upcoming Due Dates */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -291,20 +342,6 @@ export function Dashboard() {
           </CardContent>
         </Card>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Bem-vindo ao Sistema</CardTitle>
-          <CardDescription>
-            Seu ambiente de gestão e cobranças está pronto para uso.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Acompanhe aqui o desempenho financeiro da sua empresa em tempo real.
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 }
