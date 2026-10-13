@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +14,19 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("igor.carvalho76@gmail.com");
-  const [password, setPassword] = useState("Carval@26");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isForgotMode, setIsForgotMode] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate({ to: "/agendamentos" });
+      }
+    });
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,35 +43,22 @@ function LoginPage() {
 
       if (error) {
         console.error("[Auth] Falha no login para", email.trim(), error);
-        
-        // Fallback para facilitar testes imediatos se o usuário padrão ainda não estiver criado no Supabase
-        if (email.trim().toLowerCase() === "igor.carvalho76@gmail.com") {
-          console.log("[Auth] Ativando modo de sessão simulada para Igor Carvalho devido a erro do Supabase");
-          localStorage.setItem("supabase.auth.token", JSON.stringify({
-            currentSession: {
-              access_token: "mock-token-igor",
-              user: { id: "mock-igor-id", email: "igor.carvalho76@gmail.com", user_metadata: { name: "Igor Carvalho" } }
-            }
-          }));
-          toast.success("Login realizado com sucesso (Modo Demonstração)!");
-          window.location.href = "/";
-          return;
-        }
-
-        if (error.message.includes("Invalid login credentials")) {
-          toast.error("Credenciais inválidas. Verifique se o usuário existe em auth.users, se a senha está correta ou se o projeto Supabase está correto.");
+        if (error.message.includes("Invalid login credentials") || error.message.includes("Invalid grant")) {
+          toast.error("E-mail ou senha incorretos.");
+        } else if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+          toast.error("Não foi possível conectar ao servidor.");
         } else {
-          toast.error("Erro ao entrar: " + error.message);
+          toast.error(error.message || "Erro ao entrar.");
         }
       } else if (!data.session) {
         toast.error("Sessão não foi criada corretamente. Tente novamente.");
       } else {
         toast.success("Login realizado com sucesso!");
-        window.location.href = "/";
+        navigate({ to: "/agendamentos" });
       }
     } catch (err: any) {
       console.error("[Auth] Erro inesperado no login:", err);
-      toast.error("Erro inesperado: " + (err?.message || "Tente novamente"));
+      toast.error("Não foi possível conectar ao servidor.");
     } finally {
       setLoading(false);
     }
@@ -77,7 +72,7 @@ function LoginPage() {
       token_type: "bearer",
       user: {
         id: "mock-demo-id",
-        email: "igor.carvalho76@gmail.com",
+        email: email.trim() || "igor.carvalho76@gmail.com",
         aud: "authenticated",
         role: "authenticated",
         user_metadata: { name: "Administrador Demo" },
@@ -90,11 +85,8 @@ function LoginPage() {
       currentSession: demoSession
     }));
 
-    const projectId = "demo-project";
-    localStorage.setItem(`sb-${projectId}-auth-token`, JSON.stringify(demoSession));
-
-    toast.success("Entrou no modo demonstração com sucesso!");
-    window.location.href = "/";
+    toast.success("Login realizado com sucesso (Modo Demonstração)!");
+    navigate({ to: "/agendamentos" });
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -123,7 +115,6 @@ function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4 text-zinc-100 overflow-hidden">
-      {/* Imagem de fundo de salão de festas e eventos com overlay suave para conforto visual */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0 scale-105 blur-[1px]"
         style={{ 
