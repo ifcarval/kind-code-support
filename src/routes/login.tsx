@@ -46,7 +46,7 @@ function LoginPage() {
             }
           }));
           toast.success("Login realizado com sucesso (Modo Demonstração)!");
-          navigate({ to: "/" });
+          window.location.href = "/";
           return;
         }
 
@@ -59,7 +59,7 @@ function LoginPage() {
         toast.error("Sessão não foi criada corretamente. Tente novamente.");
       } else {
         toast.success("Login realizado com sucesso!");
-        navigate({ to: "/" });
+        window.location.href = "/";
       }
     } catch (err: any) {
       console.error("[Auth] Erro inesperado no login:", err);
@@ -94,7 +94,7 @@ function LoginPage() {
     localStorage.setItem(`sb-${projectId}-auth-token`, JSON.stringify(demoSession));
 
     toast.success("Entrou no modo demonstração com sucesso!");
-    navigate({ to: "/" });
+    window.location.href = "/";
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
