@@ -55,7 +55,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const [role, setRole] = useState<"owner" | "user">("owner");
+  const [role, setRole] = useState<"owner" | "user">("user");
   const { toast } = useToast();
 
   const handleAuth = async (e: React.FormEvent) => {

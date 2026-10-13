@@ -62,7 +62,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         isSidebarCollapsed ? "w-20" : "w-64"
       )}>
         <div className={cn("p-6 border-b flex items-center shrink-0", isSidebarCollapsed ? "justify-center" : "justify-between")}>
-          {!isSidebarCollapsed && <h1 className="text-xl font-bold truncate">Gestão Serviços</h1>}
+          {!isSidebarCollapsed && <h1 className="text-xl font-bold truncate">Salão Santa Felicidade</h1>}
           <Button 
             variant="ghost" 
             size="icon" 
