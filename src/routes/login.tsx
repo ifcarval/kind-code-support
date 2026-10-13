@@ -14,8 +14,8 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("igor.carvalho76@gmail.com");
+  const [password, setPassword] = useState("Carval@26");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isForgotMode, setIsForgotMode] = useState(false);
