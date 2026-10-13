@@ -70,14 +70,34 @@ function LoginPage() {
   };
 
   const handleDemoLogin = () => {
-    localStorage.setItem("supabase.auth.token", JSON.stringify({
-      currentSession: {
-        access_token: "mock-token-demo",
-        user: { id: "mock-demo-id", email: "igor.carvalho76@gmail.com", user_metadata: { name: "Administrador Demo" } }
+    const demoSession = {
+      access_token: "mock-token-demo",
+      refresh_token: "mock-refresh-demo",
+      expires_in: 3600,
+      token_type: "bearer",
+      user: {
+        id: "mock-demo-id",
+        email: "igor.carvalho76@gmail.com",
+        aud: "authenticated",
+        role: "authenticated",
+        user_metadata: { name: "Administrador Demo" },
+        app_metadata: { provider: "email" },
+        created_at: new Date().toISOString()
       }
+    };
+    
+    localStorage.setItem("supabase.auth.token", JSON.stringify({
+      currentSession: demoSession
     }));
+
+    // Também armazenar no formato padrão do Supabase se necessário
+    const projectId = "demo-project";
+    localStorage.setItem(`sb-${projectId}-auth-token`, JSON.stringify(demoSession));
+
     toast.success("Entrou no modo demonstração com sucesso!");
-    navigate({ to: "/" });
+    
+    // Força recarregamento ou redirecionamento imediato
+    window.location.href = "/";
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
