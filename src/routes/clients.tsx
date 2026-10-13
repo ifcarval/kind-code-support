@@ -26,18 +26,23 @@ export const Route = createFileRoute("/clients")({
 });
 
 function ClientsGuard() {
-  const { isOwner, isLoading: profileLoading } = useProfile();
+  const { profile, isOwner, isLoading: profileLoading } = useProfile();
   const navigate = useNavigate();
 
   if (profileLoading) {
     return (
       <AppLayout>
-        <div className="p-6 text-muted-foreground">Carregando...</div>
+        <div className="p-6 text-muted-foreground flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" /> Carregando permissões...
+        </div>
       </AppLayout>
     );
   }
 
-  if (!isOwner) {
+  // Permissão total para super_admin, owner ou email específico igor.carvalho76@gmail.com
+  const isSuperAdminOrOwner = isOwner || profile?.role === 'super_admin' || profile?.email === 'igor.carvalho76@gmail.com';
+
+  if (!isSuperAdminOrOwner && profile) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-[calc(100vh-64px)] p-6">
@@ -46,7 +51,7 @@ function ClientsGuard() {
               <CardTitle className="text-destructive flex justify-center mb-2">Acesso Negado</CardTitle>
               <CardDescription>
                 Você não tem permissão para acessar a gestão de clientes. 
-                Esta página é restrita a proprietários.
+                Esta página é restrita a administradores e proprietários.
               </CardDescription>
             </CardHeader>
             <CardFooter className="justify-center">
@@ -65,7 +70,6 @@ function ClientsPage() {
   const { clients, loading, fetchClients, deleteClient, createClient, updateClient } = useClients();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Form State corresponding to customers table schema
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<any>(null);
   const [formData, setFormData] = useState<any>({
@@ -98,12 +102,12 @@ function ClientsPage() {
     if (client) {
       setEditingClient(client);
       setFormData({
-        name: client.name || "",
-        document: client.document || "",
+        name: client.name || client.nome_razao_social || "",
+        document: client.document || client.cpf_cnpj || "",
         email: client.email || "",
-        phone: client.phone || "",
+        phone: client.phone || client.telefone || "",
         whatsapp: client.whatsapp || "",
-        address: client.address || "",
+        address: client.address || client.endereco || "",
         status: client.status || "ativo"
       });
     } else {
@@ -155,7 +159,7 @@ function ClientsPage() {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Users className="h-6 w-6" />
-            Clientes
+            Clientes (Tabela customers)
           </h1>
           <Button className="gap-2" onClick={() => handleOpenModal()}>
             <Plus className="h-4 w-4" />
@@ -179,7 +183,7 @@ function ClientsPage() {
                   />
                 </div>
                 <Button type="submit" variant="secondary">Buscar</Button>
-                <Button type="button" variant="outline" size="icon">
+                <Button type="button" variant="outline" size="icon" onClick={() => fetchClients(searchTerm)}>
                   <Filter className="h-4 w-4" />
                 </Button>
               </form>
@@ -205,15 +209,15 @@ function ClientsPage() {
                   {clients.map((client) => (
                     <TableRow key={client.id}>
                       <TableCell className="font-medium">
-                        <div>{client.name}</div>
-                        {client.address && (
-                          <div className="text-xs text-muted-foreground truncate max-w-xs">{client.address}</div>
+                        <div>{client.name || client.nome_razao_social}</div>
+                        {(client.address || client.endereco) && (
+                          <div className="text-xs text-muted-foreground truncate max-w-xs">{client.address || client.endereco}</div>
                         )}
                       </TableCell>
-                      <TableCell>{client.document || "N/A"}</TableCell>
+                      <TableCell>{client.document || client.cpf_cnpj || "N/A"}</TableCell>
                       <TableCell>
                         <div className="text-sm">{client.email || "-"}</div>
-                        <div className="text-xs text-muted-foreground">{client.phone || client.whatsapp || "-"}</div>
+                        <div className="text-xs text-muted-foreground">{client.phone || client.telefone || client.whatsapp || "-"}</div>
                       </TableCell>
                       <TableCell>{getStatusBadge(client.status)}</TableCell>
                       <TableCell className="text-right">
@@ -222,7 +226,7 @@ function ClientsPage() {
                             variant="ghost" 
                             size="icon" 
                             title="Visualizar Detalhes"
-                            onClick={() => navigate({ to: `/clients/${client.id}` })}
+                            onClick={() => useNavigate({ to: `/clients/${client.id}` })}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -270,7 +274,7 @@ function ClientsPage() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
+                <Label htmlFor="name">Nome / Razão Social</Label>
                 <Input 
                   id="name" 
                   value={formData.name} 
