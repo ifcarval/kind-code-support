@@ -22,20 +22,32 @@ function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) {
+      toast.error("Por favor, preencha o e-mail e a senha.");
+      return;
+    }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
         password,
       });
 
       if (error) {
-        toast.error("Erro ao entrar: " + error.message);
+        console.error("[Auth] Falha no login para", email.trim(), error);
+        if (error.message.includes("Invalid login credentials")) {
+          toast.error("Credenciais inválidas. Verifique se o usuário existe em auth.users, se a senha está correta ou se o projeto Supabase está correto.");
+        } else {
+          toast.error("Erro ao entrar: " + error.message);
+        }
+      } else if (!data.session) {
+        toast.error("Sessão não foi criada corretamente. Tente novamente.");
       } else {
         toast.success("Login realizado com sucesso!");
         navigate({ to: "/" });
       }
     } catch (err: any) {
+      console.error("[Auth] Erro inesperado no login:", err);
       toast.error("Erro inesperado: " + (err?.message || "Tente novamente"));
     } finally {
       setLoading(false);
