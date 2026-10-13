@@ -35,12 +35,10 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const allNavItems = [
     { label: "Dashboard", icon: LayoutDashboard, to: "/" },
-    { label: "Faturamento", icon: Receipt, to: "/billing" },
-    { label: "Clientes", icon: Users, to: "/clients", restricted: true },
-    { label: "Catálogo Serviços", icon: Briefcase, to: "/services", restricted: true },
-    { label: "Serviços Contratados", icon: Briefcase, to: "/contracted-services", restricted: true },
-    { label: "Configurações", icon: Settings, to: "/settings", restricted: true },
-    { label: "Área Admin", icon: ShieldCheck, to: "/admin/users", adminOnly: true },
+    { label: "Clientes", icon: Users, to: "/clients" },
+    { label: "Financeiro", icon: Receipt, to: "/billing" },
+    { label: "Contratos", icon: Briefcase, to: "/contracts" },
+    { label: "Configurações", icon: Settings, to: "/settings" },
   ];
 
   const navItems = allNavItems.filter(item => {
