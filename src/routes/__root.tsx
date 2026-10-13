@@ -114,12 +114,47 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+import { usePermissions } from "@/hooks/use-permissions";
+import { useNavigate, useLocation } from "@tanstack/react-router";
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AuthCheckWrapper>
+        <Outlet />
+      </AuthCheckWrapper>
     </QueryClientProvider>
   );
+}
+
+function AuthCheckWrapper({ children }: { children: ReactNode }) {
+  const { session, isLoading } = usePermissions();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!isLoading) {
+      const isLoginRoute = location.pathname.startsWith("/login");
+      if (!session && !isLoginRoute) {
+        navigate({ to: "/login" });
+      } else if (session && isLoginRoute) {
+        navigate({ to: "/" });
+      }
+    }
+  }, [session, isLoading, location.pathname, navigate]);
+
+  if (isLoading && !location.pathname.startsWith("/login")) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Carregando sistema...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 }
