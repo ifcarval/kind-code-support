@@ -90,14 +90,11 @@ function LoginPage() {
       currentSession: demoSession
     }));
 
-    // Também armazenar no formato padrão do Supabase se necessário
     const projectId = "demo-project";
     localStorage.setItem(`sb-${projectId}-auth-token`, JSON.stringify(demoSession));
 
     toast.success("Entrou no modo demonstração com sucesso!");
-    
-    // Força recarregamento ou redirecionamento imediato
-    window.location.href = "/";
+    navigate({ to: "/" });
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
