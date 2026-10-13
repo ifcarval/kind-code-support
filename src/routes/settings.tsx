@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/AppLayout";
+import { useLandlords, LandlordItem } from "@/hooks/use-landlords";
 
 import { useSettings } from "@/hooks/use-settings";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/use-profile";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Label } from "@/components/ui/label";
 import { 
   LayoutDashboard, 
   Users, 
@@ -26,7 +29,9 @@ import {
   Bell,
   Plus,
   Trash2,
-  MessageSquare
+  MessageSquare,
+  UserCheck,
+  Edit
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -50,6 +55,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { toast as sonnerToast } from "sonner";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsGuard,
