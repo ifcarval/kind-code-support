@@ -79,8 +79,17 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4 text-zinc-100">
-      <div className="w-full max-w-md">
+    <div className="relative flex min-h-screen items-center justify-center px-4 text-zinc-100 overflow-hidden">
+      {/* Imagem de fundo de salão de festas e eventos com overlay suave para conforto visual */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0 scale-105 blur-[1px]"
+        style={{ 
+          backgroundImage: `url('https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2000&auto=format&fit=crop')` 
+        }}
+      />
+      <div className="absolute inset-0 bg-zinc-950/75 backdrop-blur-[2px] z-0" />
+
+      <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight text-white">Salão Santa Felicidade</h1>
           <p className="text-sm text-zinc-400 mt-2">Acesso ao sistema de gerenciamento</p>
