@@ -40,6 +40,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     { label: "Clientes", icon: Users, to: "/clients" },
     { label: "Financeiro", icon: Receipt, to: "/billing" },
     { label: "Contratos", icon: Briefcase, to: "/contracts" },
+    { label: "Locadores", icon: Users, to: "/landlords" },
     { label: "Configurações", icon: Settings, to: "/settings" },
   ];
 
