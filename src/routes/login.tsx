@@ -43,12 +43,12 @@ function LoginPage() {
 
       if (error) {
         console.error("[Auth] Falha no login para", email.trim(), error);
-        if (error.message.includes("Invalid login credentials") || error.message.includes("Invalid grant")) {
-          toast.error("E-mail ou senha incorretos.");
+        if (error.message.includes("Invalid login credentials") || error.message.includes("Invalid grant") || error.message.includes("Invalid")) {
+          toast.error("E-mail ou senha incorretos. Verifique suas credenciais.");
         } else if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
           toast.error("Não foi possível conectar ao servidor.");
         } else {
-          toast.error(error.message || "Erro ao entrar.");
+          toast.error(error.message || "E-mail ou senha incorretos.");
         }
       } else if (!data.session) {
         toast.error("Sessão não foi criada corretamente. Tente novamente.");
