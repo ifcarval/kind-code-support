@@ -24,41 +24,24 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [sessionLoading, setSessionLoading] = useState(true);
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
-        await redirectUserByRole(session.user.id);
+        navigate({ to: "/dashboard", replace: true });
+      } else {
+        setSessionLoading(false);
       }
     });
   }, [navigate]);
 
-  const redirectUserByRole = async (userId: string) => {
-    try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role, company:companies(subscription_status)")
-        .eq("id", userId)
-        .single();
-
-      const rawRole = (profile?.role || "").toLowerCase();
-      const isMaster = rawRole === "master" || rawRole === "super_admin" || profile?.company?.subscription_status === "vitalicia" || sessionIsAdminEmail(userId);
-
-      if (isMaster) {
-        navigate({ to: "/agendamentos" });
-      } else if (rawRole === "common" || rawRole === "user" || rawRole === "owner") {
-        navigate({ to: "/agendamentos" });
-      } else if (rawRole === "customer") {
-        navigate({ to: "/disponibilidade" });
-      } else {
-        navigate({ to: "/disponibilidade" });
-      }
-    } catch {
-      navigate({ to: "/disponibilidade" });
-    }
-  };
-
-  const sessionIsAdminEmail = (_id: string) => {
-    return false;
+  const handleDemoLogin = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      navigate({ to: "/dashboard", replace: true });
+    }, 400);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -84,7 +67,7 @@ function LoginPage() {
         toast.error("Sessão não foi criada corretamente. Tente novamente.");
       } else {
         toast.success("Login realizado com sucesso!");
-        await redirectUserByRole(data.session.user.id);
+        navigate({ to: "/dashboard", replace: true });
       }
     } catch (err: any) {
       toast.error("Não foi possível conectar ao servidor.");
@@ -126,7 +109,6 @@ function LoginPage() {
       if (error) throw error;
 
       if (data.user) {
-        // Garantir inserção em profiles com role customer
         await supabase.from("profiles").upsert({
           id: data.user.id,
           email: email.trim(),
@@ -135,7 +117,6 @@ function LoginPage() {
           role: "customer"
         });
 
-        // Também criar registro em clients se aplicável
         await supabase.from("clients").insert({
           nome_razao_social: fullName.trim(),
           email: email.trim(),
@@ -175,6 +156,14 @@ function LoginPage() {
       setLoading(false);
     }
   };
+
+  if (sessionLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-white">
+        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4 text-zinc-100 overflow-hidden">
@@ -372,6 +361,16 @@ function LoginPage() {
                 </Button>
                 <Button
                   type="button"
+                  variant="secondary"
+                  onClick={handleDemoLogin}
+                  className="w-full bg-zinc-800 hover:bg-zinc-700 text-purple-300 font-medium mt-2 border border-purple-500/30"
+                  disabled={loading}
+                >
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Entrar em Modo Demonstração
+                </Button>
+                <Button
+                  type="button"
                   variant="outline"
                   onClick={() => setIsRegisterMode(true)}
                   className="w-full border-zinc-700 bg-zinc-800 text-zinc-200 hover:bg-zinc-700 mt-2 flex items-center gap-2"
@@ -384,7 +383,7 @@ function LoginPage() {
           <CardFooter className="flex justify-center border-t border-zinc-800 pt-4 text-xs text-zinc-500">
             Salão Santa Felicidade • Sistema Seguro
           </CardFooter>
-        </Card>
+        </Card>+
       </div>
     </div>
   );

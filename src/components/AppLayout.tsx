@@ -37,29 +37,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     }
   }, [session, profileLoading, navigate]);
 
-  useEffect(() => {
-    if (!profileLoading && session) {
-      const currentPath = location.pathname.replace("/", "") || (isCustomer ? "disponibilidade" : "agendamentos");
-      const moduleKey = currentPath.split("/")[0] || (isCustomer ? "disponibilidade" : "agendamentos");
-      const routeMap: Record<string, string> = {
-        "": isCustomer ? "disponibilidade" : "agendamentos",
-        "agendamentos": "agendamentos",
-        "events": "events",
-        "calendar": "calendar",
-        "disponibilidade": "disponibilidade",
-        "minhas-solicitacoes": "minhas-solicitacoes",
-        "clients": "clients",
-        "billing": "billing",
-        "contracts": "contracts",
-        "landlords": "landlords",
-        "settings": "settings"
-      };
-      const resolvedModule = routeMap[moduleKey] || moduleKey;
-      if (!canAccessModule(resolvedModule)) {
-        navigate({ to: isCustomer ? "/disponibilidade" : "/agendamentos" });
-      }
-    }
-  }, [location.pathname, isMaster, isCustomer, session, profileLoading, canAccessModule, navigate]);
+
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();

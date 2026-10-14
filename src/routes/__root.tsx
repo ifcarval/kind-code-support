@@ -140,12 +140,12 @@ function AuthCheckWrapper({ children }: { children: ReactNode }) {
       if (!session && !isLoginRoute) {
         navigate({ to: "/login" });
       } else if (session && isLoginRoute) {
-        navigate({ to: "/agendamentos" });
+        navigate({ to: "/" });
       }
     }
   }, [session, isLoading, location.pathname, navigate]);
 
-  if (isLoading && !location.pathname.startsWith("/login")) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
         <div className="flex flex-col items-center gap-2">
