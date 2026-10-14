@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, EyeOff, Lock, Mail, Loader2, UserPlus, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, Loader2, UserPlus, ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
@@ -23,6 +23,77 @@ function LoginPage() {
   const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const checkPasswordStrength = (pwd: string) => {
+    if (!pwd) return { score: 0, label: "", color: "bg-zinc-700", textColor: "text-zinc-500" };
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[a-z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+    const obviousPasswords = ["123456", "12345678", "password", "senha123", "admin123"];
+    const lowerPwd = pwd.toLowerCase();
+    const firstName = fullName ? fullName.toLowerCase().trim().split(" ")[0] : "";
+    const isObvious = obviousPasswords.includes(lowerPwd) || 
+      (firstName.length > 2 && lowerPwd.includes(firstName)) ||
+      lowerPwd.includes("santa") || lowerPwd.includes("felicidade");
+
+    if (isObvious || score < 3 || pwd.length < 8) {
+      return { score: 1, label: "Fraca", color: "bg-red-500", textColor: "text-red-400" };
+    } else if (score < 5) {
+      return { score: 2, label: "Média", color: "bg-amber-500", textColor: "text-amber-400" };
+    } else {
+      return { score: 3, label: "Forte", color: "bg-emerald-500", textColor: "text-emerald-400" };
+    }
+  };
+
+  const validatePasswordRules = (pwd: string, name?: string) => {
+    if (pwd.length < 8) {
+      return "A senha deve ter no mínimo 8 caracteres.";
+    }
+    if (!/[A-Z]/.test(pwd)) {
+      return "A senha deve conter pelo menos 1 letra maiúscula.";
+    }
+    if (!/[a-z]/.test(pwd)) {
+      return "A senha deve conter pelo menos 1 letra minúscula.";
+    }
+    if (!/[0-9]/.test(pwd)) {
+      return "A senha deve conter pelo menos 1 número.";
+    }
+    if (!/[^A-Za-z0-9]/.test(pwd)) {
+      return "A senha deve conter pelo menos 1 caractere especial.";
+    }
+
+    const obviousPasswords = ["123456", "12345678", "password", "senha123", "admin123"];
+    const lowerPwd = pwd.toLowerCase();
+    if (obviousPasswords.includes(lowerPwd)) {
+      return "Essa senha é muito óbvia e fácil de adivinhar. Escolha outra.";
+    }
+    if (name) {
+      const firstName = name.toLowerCase().trim().split(" ")[0];
+      if (firstName.length > 2 && lowerPwd.includes(firstName)) {
+        return "A senha não pode conter seu nome.";
+      }
+    }
+    if (lowerPwd.includes("santa") || lowerPwd.includes("felicidade")) {
+      return "A senha não pode conter o nome da empresa.";
+    }
+    return null;
+  };
+
+  const formatSupabaseError = (msg: string) => {
+    if (!msg) return "Ocorreu um erro ao processar a solicitação.";
+    if (
+      msg.toLowerCase().includes("weak") ||
+      msg.toLowerCase().includes("easy to guess") ||
+      msg.toLowerCase().includes("password")
+    ) {
+      return "Essa senha é muito fraca ou fácil de adivinhar. Escolha uma senha mais segura.";
+    }
+    return msg;
+  };
 
   const [sessionLoading, setSessionLoading] = useState(true);
 
@@ -61,7 +132,7 @@ function LoginPage() {
         if (error.message.includes("Invalid login credentials") || error.message.includes("Invalid")) {
           toast.error("E-mail ou senha incorretos.");
         } else {
-          toast.error(error.message || "E-mail ou senha incorretos.");
+          toast.error(formatSupabaseError(error.message));
         }
       } else if (!data.session) {
         toast.error("Sessão não foi criada corretamente. Tente novamente.");
@@ -86,8 +157,9 @@ function LoginPage() {
       toast.error("As senhas não coincidem.");
       return;
     }
-    if (password.length < 6) {
-      toast.error("A senha deve ter pelo menos 6 caracteres.");
+    const pwdError = validatePasswordRules(password, fullName);
+    if (pwdError) {
+      toast.error(pwdError);
       return;
     }
 
@@ -106,7 +178,9 @@ function LoginPage() {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(formatSupabaseError(error.message));
+      }
 
       if (data.user) {
         await supabase.from("profiles").upsert({
@@ -130,7 +204,7 @@ function LoginPage() {
       setPassword("");
       setConfirmPassword("");
     } catch (err: any) {
-      toast.error(err.message || "Erro ao criar conta.");
+      toast.error(formatSupabaseError(err.message || "Erro ao criar conta."));
     } finally {
       setLoading(false);
     }
@@ -147,15 +221,19 @@ function LoginPage() {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/login`,
       });
-      if (error) throw error;
+      if (error) {
+        throw new Error(formatSupabaseError(error.message));
+      }
       toast.success("E-mail de recuperação enviado! Verifique sua caixa de entrada.");
       setIsForgotMode(false);
     } catch (err: any) {
-      toast.error(err.message || "Erro ao solicitar recuperação.");
+      toast.error(formatSupabaseError(err.message || "Erro ao solicitar recuperação."));
     } finally {
       setLoading(false);
     }
   };
+
+  const strength = checkPasswordStrength(password);
 
   if (sessionLoading) {
     return (
@@ -239,7 +317,7 @@ function LoginPage() {
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder="Mínimo 6 caracteres"
+                      placeholder="Digite uma senha segura"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="bg-zinc-800 border-zinc-700 text-white pr-10"
@@ -253,6 +331,42 @@ function LoginPage() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+
+                  {/* Regras e Indicador Visual de Senha */}
+                  {password && (
+                    <div className="mt-2 space-y-2 rounded-md bg-zinc-950/60 p-2.5 border border-zinc-800 text-xs">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-zinc-400">Segurança da senha:</span>
+                        <span className={`font-semibold ${strength.textColor}`}>{strength.label}</span>
+                      </div>
+                      <div className="flex gap-1 h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                        <div className={`h-full transition-all duration-300 ${strength.score >= 1 ? strength.color : 'bg-transparent'} ${strength.score === 1 ? 'w-1/3' : strength.score === 2 ? 'w-2/3' : 'w-full'}`} />
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-1 pt-1 text-[11px] text-zinc-400">
+                        <div className="flex items-center gap-1.5">
+                          {password.length >= 8 ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" /> : <XCircle className="h-3.5 w-3.5 text-zinc-600" />}
+                          <span className={password.length >= 8 ? "text-zinc-200" : "text-zinc-400"}>Mínimo de 8 caracteres</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {/[A-Z]/.test(password) ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" /> : <XCircle className="h-3.5 w-3.5 text-zinc-600" />}
+                          <span className={/[A-Z]/.test(password) ? "text-zinc-200" : "text-zinc-400"}>Pelo menos 1 letra maiúscula</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {/[a-z]/.test(password) ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" /> : <XCircle className="h-3.5 w-3.5 text-zinc-600" />}
+                          <span className={/[a-z]/.test(password) ? "text-zinc-200" : "text-zinc-400"}>Pelo menos 1 letra minúscula</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {/[0-9]/.test(password) ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" /> : <XCircle className="h-3.5 w-3.5 text-zinc-600" />}
+                          <span className={/[0-9]/.test(password) ? "text-zinc-200" : "text-zinc-400"}>Pelo menos 1 número</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {/[^A-Za-z0-9]/.test(password) ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" /> : <XCircle className="h-3.5 w-3.5 text-zinc-600" />}
+                          <span className={/[^A-Za-z0-9]/.test(password) ? "text-zinc-200" : "text-zinc-400"}>Pelo menos 1 caractere especial</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <Label className="text-zinc-300">Confirmar senha</Label>
@@ -294,6 +408,9 @@ function LoginPage() {
                       required
                     />
                   </div>
+                  <p className="text-xs text-zinc-400">
+                    Ao redefinir sua senha pelo link recebido por e-mail, lembre-se de usar uma senha segura com no mínimo 8 caracteres, letras maiúsculas e minúsculas, números e caracteres especiais.
+                  </p>
                 </div>
                 <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -383,7 +500,7 @@ function LoginPage() {
           <CardFooter className="flex justify-center border-t border-zinc-800 pt-4 text-xs text-zinc-500">
             Salão Santa Felicidade • Sistema Seguro
           </CardFooter>
-        </Card>+
+        </Card>
       </div>
     </div>
   );
