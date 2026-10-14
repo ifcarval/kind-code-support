@@ -130,7 +130,7 @@ function RootComponent() {
 }
 
 function AuthCheckWrapper({ children }: { children: ReactNode }) {
-  const { session, isLoading } = usePermissions();
+  const { session, isLoading, isMaster, isCustomer, timeoutReached, profileError } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -140,17 +140,40 @@ function AuthCheckWrapper({ children }: { children: ReactNode }) {
       if (!session && !isLoginRoute) {
         navigate({ to: "/login" });
       } else if (session && isLoginRoute) {
-        navigate({ to: "/" });
+        if (isCustomer) {
+          navigate({ to: "/disponibilidade" });
+        } else {
+          navigate({ to: "/dashboard" });
+        }
       }
     }
-  }, [session, isLoading, location.pathname, navigate]);
+  }, [session, isLoading, isCustomer, location.pathname, navigate]);
 
-  if (isLoading) {
+  if (isLoading && !timeoutReached) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
-        <div className="flex flex-col items-center gap-2">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Carregando sistema...</p>
+        <div className="flex flex-col items-center gap-3 text-center px-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
+          <p className="text-sm text-muted-foreground">Carregando informações da sua conta...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (timeoutReached || profileError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+        <div className="max-w-md text-center p-6 bg-card rounded-lg shadow border">
+          <h2 className="text-lg font-semibold text-foreground mb-2">Não foi possível carregar as informações</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Não foi possível carregar as informações da sua conta. Tente novamente.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Tentar novamente
+          </button>
         </div>
       </div>
     );

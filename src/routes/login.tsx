@@ -137,10 +137,29 @@ function LoginPage() {
       } else if (!data.session) {
         toast.error("Sessão não foi criada corretamente. Tente novamente.");
       } else {
+        console.log('SESSION OK');
+        
+        // Buscar profile para determinar redirecionamento correto
+        const { data: userProfile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", data.session.user.id)
+          .maybeSingle();
+
+        console.log('PROFILE OK');
+        console.log('AUTH READY');
+
         toast.success("Login realizado com sucesso!");
-        navigate({ to: "/dashboard", replace: true });
+        
+        const role = (userProfile?.role || "").toLowerCase();
+        if (role === "customer") {
+          navigate({ to: "/disponibilidade", replace: true });
+        } else {
+          navigate({ to: "/dashboard", replace: true });
+        }
       }
     } catch (err: any) {
+      console.error('LOGIN ERROR:', err);
       toast.error("Não foi possível conectar ao servidor.");
     } finally {
       setLoading(false);

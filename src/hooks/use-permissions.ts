@@ -1,12 +1,7 @@
 import { useProfile } from "./use-profile";
 
 export function usePermissions() {
-  const { profile, session, isLoading } = useProfile();
-
-  const rawRole = (profile?.role || "").toLowerCase();
-  const isMaster = rawRole === "master" || rawRole === "super_admin" || profile?.company?.subscription_status === "vitalicia";
-  const isCustomer = rawRole === "customer";
-  const isCommon = !isMaster && !isCustomer;
+  const { profile, session, isLoading, isMaster, isCustomer, isCommon, timeoutReached, profileError } = useProfile();
 
   const canAccessModule = (module: string): boolean => {
     if (!session) return false;
@@ -18,7 +13,7 @@ export function usePermissions() {
     }
 
     // Regras para usuário comum
-    const allowedModulesForCommon = ["events", "calendar", "disponibilidade"];
+    const allowedModulesForCommon = ["events", "calendar", "disponibilidade", "dashboard"];
     return allowedModulesForCommon.includes(module.toLowerCase());
   };
 
@@ -29,5 +24,9 @@ export function usePermissions() {
     isCommon,
     canAccessModule,
     isLoading,
+    session,
+    profile,
+    timeoutReached,
+    profileError,
   };
 }
