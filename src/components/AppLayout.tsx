@@ -37,10 +37,11 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   useEffect(() => {
     if (!profileLoading && session) {
-      const currentPath = location.pathname.replace("/", "") || "dashboard";
-      const moduleKey = currentPath.split("/")[0] || "dashboard";
+      const currentPath = location.pathname.replace("/", "") || "agendamentos";
+      const moduleKey = currentPath.split("/")[0] || "agendamentos";
       const routeMap: Record<string, string> = {
-        "": "dashboard",
+        "": "agendamentos",
+        "agendamentos": "agendamentos",
         "events": "events",
         "calendar": "calendar",
         "clients": "clients",
@@ -51,7 +52,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       };
       const resolvedModule = routeMap[moduleKey] || moduleKey;
       if (!canAccessModule(resolvedModule)) {
-        navigate({ to: "/events" });
+        navigate({ to: "/agendamentos" });
       }
     }
   }, [location.pathname, isMaster, session, profileLoading, canAccessModule, navigate]);
@@ -62,7 +63,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   };
 
   const allNavItems = [
-    { label: "Dashboard", icon: LayoutDashboard, to: "/", module: "dashboard" },
+    { label: "Agendamentos", icon: LayoutDashboard, to: "/agendamentos", module: "agendamentos" },
     { label: "Eventos", icon: Briefcase, to: "/events", module: "events" },
     { label: "Calendário", icon: LayoutDashboard, to: "/calendar", module: "calendar" },
     { label: "Clientes", icon: Users, to: "/clients", module: "clients" },

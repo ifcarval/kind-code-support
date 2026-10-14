@@ -43,9 +43,16 @@ function LoginPage() {
 
       if (error) {
         console.error("[Auth] Falha no login para", email.trim(), error);
-        if (error.message.includes("Invalid login credentials") || error.message.includes("Invalid grant") || error.message.includes("Invalid")) {
-          toast.error("E-mail ou senha incorretos. Verifique suas credenciais.");
-        } else if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+        if (
+          error.message.includes("Invalid login credentials") ||
+          error.message.includes("Invalid grant") ||
+          error.message.includes("Invalid")
+        ) {
+          toast.error("E-mail ou senha incorretos.");
+        } else if (
+          error.message.includes("Failed to fetch") ||
+          error.message.includes("NetworkError")
+        ) {
           toast.error("Não foi possível conectar ao servidor.");
         } else {
           toast.error(error.message || "E-mail ou senha incorretos.");
@@ -77,13 +84,16 @@ function LoginPage() {
         role: "authenticated",
         user_metadata: { name: "Administrador Demo" },
         app_metadata: { provider: "email" },
-        created_at: new Date().toISOString()
-      }
+        created_at: new Date().toISOString(),
+      },
     };
-    
-    localStorage.setItem("supabase.auth.token", JSON.stringify({
-      currentSession: demoSession
-    }));
+
+    localStorage.setItem(
+      "supabase.auth.token",
+      JSON.stringify({
+        currentSession: demoSession,
+      })
+    );
 
     toast.success("Login realizado com sucesso (Modo Demonstração)!");
     navigate({ to: "/agendamentos" });
@@ -115,10 +125,10 @@ function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4 text-zinc-100 overflow-hidden">
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0 scale-105 blur-[1px]"
-        style={{ 
-          backgroundImage: `url('https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2000&auto=format&fit=crop')` 
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2000&auto=format&fit=crop')`,
         }}
       />
       <div className="absolute inset-0 bg-zinc-950/75 backdrop-blur-[2px] z-0" />
@@ -135,7 +145,7 @@ function LoginPage() {
               {isForgotMode ? "Recuperar Senha" : "Entrar na sua conta"}
             </CardTitle>
             <CardDescription className="text-zinc-400">
-              {isForgotMode 
+              {isForgotMode
                 ? "Informe seu e-mail para receber as instruções de redefinição."
                 : "Insira suas credenciais abaixo para acessar o painel."}
             </CardDescription>

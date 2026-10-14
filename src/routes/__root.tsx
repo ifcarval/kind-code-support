@@ -140,7 +140,7 @@ function AuthCheckWrapper({ children }: { children: ReactNode }) {
       if (!session && !isLoginRoute) {
         navigate({ to: "/login" });
       } else if (session && isLoginRoute) {
-        navigate({ to: "/" });
+        navigate({ to: "/agendamentos" });
       }
     }
   }, [session, isLoading, location.pathname, navigate]);
