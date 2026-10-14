@@ -13,6 +13,24 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
+  const [resetEmail, setResetEmail] = useState("igor.carvalho76@gmail.com");
+  const [isResetting, setIsResetting] = useState(false);
+
+  const handleAdminResetIgor = async () => {
+    setIsResetting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail("igor.carvalho76@gmail.com", {
+        redirectTo: `${window.location.origin}/login`,
+      });
+      if (error) throw error;
+      toast.success("Link de redefinição de senha enviado para igor.carvalho76@gmail.com!");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao redefinir senha.");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -239,6 +257,18 @@ function LoginPage() {
                 </Button>
               </form>
             )}
+            <div className="mt-4 pt-4 border-t border-zinc-800 text-center">
+              <p className="text-xs text-zinc-400 mb-2">Problemas de acesso para igor.carvalho76@gmail.com?</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full text-xs border-zinc-700 bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
+                onClick={handleAdminResetIgor}
+                disabled={isResetting}
+              >
+                {isResetting ? "Enviando nova senha..." : "Gerar / Enviar Nova Senha para Igor"}
+              </Button>
+            </div>
           </CardContent>
           <CardFooter className="flex justify-center border-t border-zinc-800 pt-4 text-xs text-zinc-500">
             Salão Santa Felicidade • Sistema Seguro
