@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, EyeOff, Lock, Mail, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, Loader2, UserPlus, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
@@ -13,38 +13,53 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const [resetEmail, setResetEmail] = useState("igor.carvalho76@gmail.com");
-  const [isResetting, setIsResetting] = useState(false);
-
-  const handleAdminResetIgor = async () => {
-    setIsResetting(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail("igor.carvalho76@gmail.com", {
-        redirectTo: `${window.location.origin}/login`,
-      });
-      if (error) throw error;
-      toast.success("Link de redefinição de senha enviado para igor.carvalho76@gmail.com!");
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao redefinir senha.");
-    } finally {
-      setIsResetting(false);
-    }
-  };
-
   const navigate = useNavigate();
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [isForgotMode, setIsForgotMode] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isForgotMode, setIsForgotMode] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
-        navigate({ to: "/agendamentos" });
+        await redirectUserByRole(session.user.id);
       }
     });
   }, [navigate]);
+
+  const redirectUserByRole = async (userId: string) => {
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role, company:companies(subscription_status)")
+        .eq("id", userId)
+        .single();
+
+      const rawRole = (profile?.role || "").toLowerCase();
+      const isMaster = rawRole === "master" || rawRole === "super_admin" || profile?.company?.subscription_status === "vitalicia" || sessionIsAdminEmail(userId);
+
+      if (isMaster) {
+        navigate({ to: "/agendamentos" });
+      } else if (rawRole === "common" || rawRole === "user" || rawRole === "owner") {
+        navigate({ to: "/agendamentos" });
+      } else if (rawRole === "customer") {
+        navigate({ to: "/disponibilidade" });
+      } else {
+        navigate({ to: "/disponibilidade" });
+      }
+    } catch {
+      navigate({ to: "/disponibilidade" });
+    }
+  };
+
+  const sessionIsAdminEmail = (_id: string) => {
+    return false;
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,18 +75,8 @@ function LoginPage() {
       });
 
       if (error) {
-        console.error("[Auth] Falha no login para", email.trim(), error);
-        if (
-          error.message.includes("Invalid login credentials") ||
-          error.message.includes("Invalid grant") ||
-          error.message.includes("Invalid")
-        ) {
+        if (error.message.includes("Invalid login credentials") || error.message.includes("Invalid")) {
           toast.error("E-mail ou senha incorretos.");
-        } else if (
-          error.message.includes("Failed to fetch") ||
-          error.message.includes("NetworkError")
-        ) {
-          toast.error("Não foi possível conectar ao servidor.");
         } else {
           toast.error(error.message || "E-mail ou senha incorretos.");
         }
@@ -79,42 +84,75 @@ function LoginPage() {
         toast.error("Sessão não foi criada corretamente. Tente novamente.");
       } else {
         toast.success("Login realizado com sucesso!");
-        navigate({ to: "/agendamentos" });
+        await redirectUserByRole(data.session.user.id);
       }
     } catch (err: any) {
-      console.error("[Auth] Erro inesperado no login:", err);
       toast.error("Não foi possível conectar ao servidor.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDemoLogin = () => {
-    const demoSession = {
-      access_token: "mock-token-demo",
-      refresh_token: "mock-refresh-demo",
-      expires_in: 3600,
-      token_type: "bearer",
-      user: {
-        id: "mock-demo-id",
-        email: email.trim() || "igor.carvalho76@gmail.com",
-        aud: "authenticated",
-        role: "authenticated",
-        user_metadata: { name: "Administrador Demo" },
-        app_metadata: { provider: "email" },
-        created_at: new Date().toISOString(),
-      },
-    };
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullName || !email || !password || !confirmPassword || !phone) {
+      toast.error("Preencha todos os campos do cadastro.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error("As senhas não coincidem.");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
 
-    localStorage.setItem(
-      "supabase.auth.token",
-      JSON.stringify({
-        currentSession: demoSession,
-      })
-    );
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            nome: fullName.trim(),
+            full_name: fullName.trim(),
+            phone: phone.trim(),
+            role: "customer"
+          }
+        }
+      });
 
-    toast.success("Login realizado com sucesso (Modo Demonstração)!");
-    navigate({ to: "/agendamentos" });
+      if (error) throw error;
+
+      if (data.user) {
+        // Garantir inserção em profiles com role customer
+        await supabase.from("profiles").upsert({
+          id: data.user.id,
+          email: email.trim(),
+          nome: fullName.trim(),
+          telefone: phone.trim(),
+          role: "customer"
+        });
+
+        // Também criar registro em clients se aplicável
+        await supabase.from("clients").insert({
+          nome_razao_social: fullName.trim(),
+          email: email.trim(),
+          telefone: phone.trim(),
+          tipo_pessoa: "fisica"
+        }).select().maybeSingle();
+      }
+
+      toast.success("Conta criada com sucesso! Você já pode acessar.");
+      setIsRegisterMode(false);
+      setPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao criar conta.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -125,17 +163,14 @@ function LoginPage() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/login`,
       });
-      if (error) {
-        toast.error("Erro ao enviar e-mail: " + error.message);
-      } else {
-        toast.success("E-mail de recuperação enviado! Verifique sua caixa de entrada.");
-        setIsForgotMode(false);
-      }
+      if (error) throw error;
+      toast.success("E-mail de recuperação enviado! Verifique sua caixa de entrada.");
+      setIsForgotMode(false);
     } catch (err: any) {
-      toast.error("Erro ao solicitar recuperação.");
+      toast.error(err.message || "Erro ao solicitar recuperação.");
     } finally {
       setLoading(false);
     }
@@ -154,34 +189,119 @@ function LoginPage() {
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight text-white">Salão Santa Felicidade</h1>
-          <p className="text-sm text-zinc-400 mt-2">Acesso ao sistema de gerenciamento</p>
+          <p className="text-sm text-zinc-400 mt-2">Consulte as datas disponíveis para o seu evento</p>
         </div>
 
         <Card className="border-zinc-800 bg-zinc-900/90 shadow-2xl backdrop-blur">
           <CardHeader>
             <CardTitle className="text-xl text-white">
-              {isForgotMode ? "Recuperar Senha" : "Entrar na sua conta"}
+              {isRegisterMode
+                ? "Criar minha conta"
+                : isForgotMode
+                ? "Recuperar Senha"
+                : "Entrar na sua conta"}
             </CardTitle>
             <CardDescription className="text-zinc-400">
-              {isForgotMode
+              {isRegisterMode
+                ? "Preencha os dados abaixo para se cadastrar como cliente."
+                : isForgotMode
                 ? "Informe seu e-mail para receber as instruções de redefinição."
-                : "Insira suas credenciais abaixo para acessar o painel."}
+                : "Insira suas credenciais abaixo para acessar o sistema."}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {isForgotMode ? (
+            {isRegisterMode ? (
+              <form onSubmit={handleRegister} className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-zinc-300">Nome completo</Label>
+                  <Input
+                    type="text"
+                    placeholder="Seu Nome"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="bg-zinc-800 border-zinc-700 text-white"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-zinc-300">E-mail</Label>
+                  <Input
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-zinc-800 border-zinc-700 text-white"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-zinc-300">Telefone / WhatsApp</Label>
+                  <Input
+                    type="text"
+                    placeholder="(41) 99999-9999"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="bg-zinc-800 border-zinc-700 text-white"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-zinc-300">Senha</Label>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Mínimo 6 caracteres"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="bg-zinc-800 border-zinc-700 text-white pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 text-zinc-500 hover:text-zinc-300"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-zinc-300">Confirmar senha</Label>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Repita a senha"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="bg-zinc-800 border-zinc-700 text-white"
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium mt-2" disabled={loading}>
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Cadastrar
+                </Button>
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsRegisterMode(false)}
+                    className="text-xs text-purple-400 hover:underline flex items-center justify-center gap-1 mx-auto"
+                  >
+                    <ArrowLeft className="h-3 w-3" /> Voltar para o login
+                  </button>
+                </div>
+              </form>
+            ) : isForgotMode ? (
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-zinc-300">E-mail</Label>
+                  <Label className="text-zinc-300">E-mail</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
                     <Input
-                      id="email"
                       type="email"
                       placeholder="seu@email.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                      className="pl-10 bg-zinc-800 border-zinc-700 text-white"
                       required
                     />
                   </div>
@@ -203,23 +323,22 @@ function LoginPage() {
             ) : (
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-zinc-300">E-mail</Label>
+                  <Label className="text-zinc-300">E-mail</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
                     <Input
-                      id="email"
                       type="email"
                       placeholder="seu@email.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                      className="pl-10 bg-zinc-800 border-zinc-700 text-white"
                       required
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-zinc-300">Senha</Label>
+                    <Label className="text-zinc-300">Senha</Label>
                     <button
                       type="button"
                       onClick={() => setIsForgotMode(true)}
@@ -231,12 +350,11 @@ function LoginPage() {
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
                     <Input
-                      id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                      className="pl-10 pr-10 bg-zinc-800 border-zinc-700 text-white"
                       required
                     />
                     <button
@@ -252,23 +370,16 @@ function LoginPage() {
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Entrar
                 </Button>
-                <Button type="button" variant="outline" onClick={handleDemoLogin} className="w-full border-zinc-700 bg-zinc-800 text-zinc-200 hover:bg-zinc-700 mt-2">
-                  Entrar em Modo Demonstração
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsRegisterMode(true)}
+                  className="w-full border-zinc-700 bg-zinc-800 text-zinc-200 hover:bg-zinc-700 mt-2 flex items-center gap-2"
+                >
+                  <UserPlus className="h-4 w-4" /> Criar minha conta
                 </Button>
               </form>
             )}
-            <div className="mt-4 pt-4 border-t border-zinc-800 text-center">
-              <p className="text-xs text-zinc-400 mb-2">Problemas de acesso para igor.carvalho76@gmail.com?</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full text-xs border-zinc-700 bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
-                onClick={handleAdminResetIgor}
-                disabled={isResetting}
-              >
-                {isResetting ? "Enviando nova senha..." : "Gerar / Enviar Nova Senha para Igor"}
-              </Button>
-            </div>
           </CardContent>
           <CardFooter className="flex justify-center border-t border-zinc-800 pt-4 text-xs text-zinc-500">
             Salão Santa Felicidade • Sistema Seguro

@@ -13,7 +13,9 @@ import {
   Receipt, 
   Briefcase,
   ChevronLeft, 
-  ChevronRight,
+  ChevronRight, 
+  Calendar as CalendarIcon,
+  FileText,
   Bell
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -24,7 +26,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const { profile, session, isLoading: profileLoading } = useProfile();
-  const { isMaster, canAccessModule } = usePermissions();
+  const { isMaster, isCustomer, canAccessModule } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -37,13 +39,15 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   useEffect(() => {
     if (!profileLoading && session) {
-      const currentPath = location.pathname.replace("/", "") || "agendamentos";
-      const moduleKey = currentPath.split("/")[0] || "agendamentos";
+      const currentPath = location.pathname.replace("/", "") || (isCustomer ? "disponibilidade" : "agendamentos");
+      const moduleKey = currentPath.split("/")[0] || (isCustomer ? "disponibilidade" : "agendamentos");
       const routeMap: Record<string, string> = {
-        "": "agendamentos",
+        "": isCustomer ? "disponibilidade" : "agendamentos",
         "agendamentos": "agendamentos",
         "events": "events",
         "calendar": "calendar",
+        "disponibilidade": "disponibilidade",
+        "minhas-solicitacoes": "minhas-solicitacoes",
         "clients": "clients",
         "billing": "billing",
         "contracts": "contracts",
@@ -52,10 +56,10 @@ export function AppLayout({ children }: AppLayoutProps) {
       };
       const resolvedModule = routeMap[moduleKey] || moduleKey;
       if (!canAccessModule(resolvedModule)) {
-        navigate({ to: "/agendamentos" });
+        navigate({ to: isCustomer ? "/disponibilidade" : "/agendamentos" });
       }
     }
-  }, [location.pathname, isMaster, session, profileLoading, canAccessModule, navigate]);
+  }, [location.pathname, isMaster, isCustomer, session, profileLoading, canAccessModule, navigate]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -64,8 +68,10 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const allNavItems = [
     { label: "Agendamentos", icon: LayoutDashboard, to: "/agendamentos", module: "agendamentos" },
+    { label: "Disponibilidade", icon: CalendarIcon, to: "/disponibilidade", module: "disponibilidade" },
+    { label: "Minhas solicitações", icon: FileText, to: "/minhas-solicitacoes", module: "minhas-solicitacoes" },
     { label: "Eventos", icon: Briefcase, to: "/events", module: "events" },
-    { label: "Calendário", icon: LayoutDashboard, to: "/calendar", module: "calendar" },
+    { label: "Calendário", icon: CalendarIcon, to: "/calendar", module: "calendar" },
     { label: "Clientes", icon: Users, to: "/clients", module: "clients" },
     { label: "Financeiro", icon: Receipt, to: "/billing", module: "billing" },
     { label: "Contratos", icon: Briefcase, to: "/contracts", module: "contracts" },
@@ -132,9 +138,9 @@ export function AppLayout({ children }: AppLayoutProps) {
               </span>
               <span className={cn(
                 "text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded mt-0.5 inline-block w-fit",
-                isMaster ? "bg-primary/10 text-primary border border-primary/25" : "bg-muted text-muted-foreground border"
+                isMaster ? "bg-primary/10 text-primary border border-primary/25" : isCustomer ? "bg-purple-500/10 text-purple-500 border border-purple-500/25" : "bg-muted text-muted-foreground border"
               )}>
-                {isMaster ? "MASTER" : "USUÁRIO COMUM"}
+                {isMaster ? "MASTER" : isCustomer ? "CLIENTE" : "COMUM"}
               </span>
             </div>
           </div>
