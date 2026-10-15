@@ -71,13 +71,27 @@ export function useProfile() {
 
       if (!data) {
         console.warn('PROFILE NOT FOUND, creating default profile...');
+        const isMasterEmail = session.user.email === 'igor.carvalho76@gmail.com';
         const newProfile = {
           id: session.user.id,
           email: session.user.email || '',
-          nome: session.user.user_metadata?.full_name || session.user.user_metadata?.nome || 'Usuário',
-          role: 'customer'
+          nome: session.user.user_metadata?.full_name || session.user.user_metadata?.nome || (isMasterEmail ? 'Igor Carvalho' : 'Usuário'),
+          role: isMasterEmail ? 'master' : 'customer'
         };
         await supabase.from("profiles").upsert(newProfile);
+        
+        // Se for o master, garantir organization_members owner
+        if (isMasterEmail) {
+          const { data: org } = await supabase.from('organizations').select('id').ilike('name', '%Santa Felicidade%').maybeSingle();
+          if (org) {
+            await supabase.from('organization_members').upsert({
+              organization_id: org.id,
+              user_id: session.user.id,
+              role: 'owner'
+            }, { onConflict: 'organization_id,user_id' });
+          }
+        }
+
         console.log('PROFILE OK (created default)');
         return newProfile;
       }

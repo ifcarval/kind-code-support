@@ -142,8 +142,10 @@ function AuthCheckWrapper({ children }: { children: ReactNode }) {
       } else if (session && isLoginRoute) {
         if (isCustomer) {
           navigate({ to: "/disponibilidade" });
-        } else {
+        } else if (isMaster) {
           navigate({ to: "/dashboard" });
+        } else {
+          navigate({ to: "/events" });
         }
       }
     }

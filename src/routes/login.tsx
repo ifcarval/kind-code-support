@@ -154,6 +154,8 @@ function LoginPage() {
         const role = (userProfile?.role || "").toLowerCase();
         if (role === "customer") {
           navigate({ to: "/disponibilidade", replace: true });
+        } else if (role === "common") {
+          navigate({ to: "/events", replace: true });
         } else {
           navigate({ to: "/dashboard", replace: true });
         }
