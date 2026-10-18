@@ -16,13 +16,12 @@ export function useProfile() {
         setTimeoutReached(true);
         setSessionLoading(false);
       }
-    }, 8000);
+    }, 12000);
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (isMounted) {
         setSession(session);
         setSessionLoading(false);
-        console.log('SESSION OK', session ? 'Authenticated' : 'No session');
       }
     }).catch((err) => {
       console.error('SESSION ERROR:', err);
@@ -37,7 +36,6 @@ export function useProfile() {
       if (isMounted) {
         setSession(session);
         setSessionLoading(false);
-        console.log('AUTH STATE CHANGE OK', session ? 'Authenticated' : 'No session');
       }
     });
 
@@ -51,50 +49,52 @@ export function useProfile() {
   const { data: profile, isLoading: profileLoading, error: profileError, refetch } = useQuery({
     queryKey: ["profile", session?.user?.id],
     enabled: !!session?.user?.id,
-    retry: 1,
+    retry: 2,
     staleTime: 1000 * 60 * 5,
     queryFn: async () => {
-      console.log('FETCHING PROFILE FOR:', session.user.id);
-      const isMasterEmail = session.user.email?.toLowerCase() === 'igor.carvalho76@gmail.com';
+      if (!session?.user?.id) return null;
+      const userId = session.user.id;
+      const userEmail = (session.user.email || "").toLowerCase();
+      const isMasterEmail = userEmail === 'igor.carvalho76@gmail.com' || userEmail === 'igor.felipe76@gmail.com';
       
       let { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", session.user.id)
+        .eq("id", userId)
         .maybeSingle();
 
       if (error) {
-        console.warn('PROFILE FETCH WARNING:', error.message);
+        console.error('PROFILE FETCH ERROR:', error.message, error.code);
       }
 
       if (!data) {
-        console.warn('PROFILE NOT FOUND, creating default profile...');
+        const defaultRole = isMasterEmail ? 'master' : 'customer';
         const newProfile = {
-          id: session.user.id,
-          email: session.user.email || '',
+          id: userId,
+          email: userEmail,
           nome: session.user.user_metadata?.full_name || session.user.user_metadata?.nome || (isMasterEmail ? 'Igor Carvalho' : 'Usuário'),
-          role: isMasterEmail ? 'master' : 'customer'
+          role: defaultRole
         };
+        
         const { error: upsertErr } = await supabase.from("profiles").upsert(newProfile);
         if (upsertErr) {
-          console.error('PROFILE UPSERT ERROR:', upsertErr);
+          console.error('PROFILE UPSERT ERROR:', upsertErr.message);
         }
         data = newProfile;
       } else if (isMasterEmail && data.role !== 'master') {
-        await supabase.from("profiles").update({ role: 'master' }).eq('id', session.user.id);
+        await supabase.from("profiles").update({ role: 'master' }).eq('id', userId);
         data.role = 'master';
       }
 
-      console.log('PROFILE OK');
       return data;
     },
   });
 
-  const isLoading = sessionLoading || (!!session?.user?.id && profileLoading && !timeoutReached);
+  const isLoading = sessionLoading || (!!session?.user?.id && profileLoading && !timeoutReached && !profile && !profileError);
 
   const rawRole = (profile?.role || "").toLowerCase();
-  const isMaster = rawRole === "master" || rawRole === "super_admin" || profile?.company?.subscription_status === "vitalicia";
-  const isCustomer = rawRole === "customer";
+  const isMaster = rawRole === "master" || rawRole === "super_admin" || (session?.user?.email || '').toLowerCase() === 'igor.carvalho76@gmail.com';
+  const isCustomer = rawRole === "customer" && !isMaster;
   const isCommon = !isMaster && !isCustomer;
 
   const isLifetimeAdmin = session?.user?.email === 'igor.felipe76@gmail.com' || profile?.company?.subscription_status === 'vitalicia';
@@ -105,7 +105,7 @@ export function useProfile() {
     profile,
     isLoading,
     profileError,
-    timeoutReached,
+    timeoutReached: timeoutReached && !profile && !profileError,
     refetch,
     isAuthenticated: !!session,
     isOwner: profile?.role === 'owner',
