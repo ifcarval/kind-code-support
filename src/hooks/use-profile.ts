@@ -55,45 +55,34 @@ export function useProfile() {
     staleTime: 1000 * 60 * 5,
     queryFn: async () => {
       console.log('FETCHING PROFILE FOR:', session.user.id);
-      const { data, error } = await supabase
+      const isMasterEmail = session.user.email?.toLowerCase() === 'igor.carvalho76@gmail.com';
+      
+      let { data, error } = await supabase
         .from("profiles")
-        .select(`
-          *,
-          company:companies(*)
-        `)
+        .select("*")
         .eq("id", session.user.id)
         .maybeSingle();
 
       if (error) {
-        console.error('PROFILE ERROR:', error);
-        throw error;
+        console.warn('PROFILE FETCH WARNING:', error.message);
       }
 
       if (!data) {
         console.warn('PROFILE NOT FOUND, creating default profile...');
-        const isMasterEmail = session.user.email === 'igor.carvalho76@gmail.com';
         const newProfile = {
           id: session.user.id,
           email: session.user.email || '',
           nome: session.user.user_metadata?.full_name || session.user.user_metadata?.nome || (isMasterEmail ? 'Igor Carvalho' : 'Usuário'),
           role: isMasterEmail ? 'master' : 'customer'
         };
-        await supabase.from("profiles").upsert(newProfile);
-        
-        // Se for o master, garantir organization_members owner
-        if (isMasterEmail) {
-          const { data: org } = await supabase.from('organizations').select('id').ilike('name', '%Santa Felicidade%').maybeSingle();
-          if (org) {
-            await supabase.from('organization_members').upsert({
-              organization_id: org.id,
-              user_id: session.user.id,
-              role: 'owner'
-            }, { onConflict: 'organization_id,user_id' });
-          }
+        const { error: upsertErr } = await supabase.from("profiles").upsert(newProfile);
+        if (upsertErr) {
+          console.error('PROFILE UPSERT ERROR:', upsertErr);
         }
-
-        console.log('PROFILE OK (created default)');
-        return newProfile;
+        data = newProfile;
+      } else if (isMasterEmail && data.role !== 'master') {
+        await supabase.from("profiles").update({ role: 'master' }).eq('id', session.user.id);
+        data.role = 'master';
       }
 
       console.log('PROFILE OK');

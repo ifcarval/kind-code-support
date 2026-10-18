@@ -165,17 +165,28 @@ function AuthCheckWrapper({ children }: { children: ReactNode }) {
   if (timeoutReached || profileError) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
-        <div className="max-w-md text-center p-6 bg-card rounded-lg shadow border">
-          <h2 className="text-lg font-semibold text-foreground mb-2">Não foi possível carregar as informações</h2>
-          <p className="text-sm text-muted-foreground mb-4">
+        <div className="max-w-md text-center p-6 bg-card rounded-lg shadow border space-y-4">
+          <h2 className="text-lg font-semibold text-foreground mb-1">Não foi possível carregar as informações</h2>
+          <p className="text-sm text-muted-foreground">
             Não foi possível carregar as informações da sua conta. Tente novamente.
           </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Tentar novamente
-          </button>
+          <div className="flex flex-col gap-2 pt-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Tentar novamente
+            </button>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = '/login';
+              }}
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Sair e entrar novamente
+            </button>
+          </div>
         </div>
       </div>
     );
