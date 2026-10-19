@@ -24,7 +24,7 @@ export const Route = createFileRoute("/events")({
 });
 
 function EventsPage() {
-  const { events, loading, createEvent, updateEvent, cancelEvent } = useEvents();
+  const { events, eventTypes, loading, createEvent, updateEvent, cancelEvent } = useEvents();
   const { clients } = useClients();
   const { profile } = useProfile();
 
@@ -37,6 +37,8 @@ function EventsPage() {
   const [formData, setFormData] = useState({
     title: "",
     event_type: "Casamento",
+    event_type_id: "",
+    custom_event_type: "",
     status: "QUOTE" as EventItem['status'],
     customer_id: "",
     start_date: new Date().toISOString().split('T')[0],
@@ -51,9 +53,12 @@ function EventsPage() {
 
   const handleOpenCreate = (defaultDate?: string) => {
     setEditingId(null);
+    const defaultType = eventTypes.find(t => t.name === 'Casamento') || eventTypes[0];
     setFormData({
       title: "",
-      event_type: "Casamento",
+      event_type: defaultType?.name || "Casamento",
+      event_type_id: defaultType?.id || "",
+      custom_event_type: "",
       status: "QUOTE",
       customer_id: "",
       start_date: defaultDate || new Date().toISOString().split('T')[0],
@@ -70,9 +75,12 @@ function EventsPage() {
 
   const handleOpenEdit = (ev: EventItem) => {
     setEditingId(ev.id);
+    const matchedType = eventTypes.find(t => t.id === ev.event_type_id || t.name === ev.event_type);
     setFormData({
       title: ev.title,
-      event_type: ev.event_type || "",
+      event_type: matchedType ? matchedType.name : (ev.event_type || "Casamento"),
+      event_type_id: matchedType ? matchedType.id : (ev.event_type_id || ""),
+      custom_event_type: ev.custom_event_type || "",
       status: ev.status,
       customer_id: ev.customer_id || "",
       start_date: ev.start_date,
@@ -96,10 +104,25 @@ function EventsPage() {
     e.preventDefault();
     if (!profile?.company_id) return;
 
+    const selectedTypeObj = eventTypes.find(t => t.id === formData.event_type_id);
+    const finalEventTypeName = selectedTypeObj ? selectedTypeObj.name : formData.event_type;
+
     const payload = {
-      ...formData,
-      organization_id: profile.company_id,
-      customer_id: formData.customer_id || null
+      title: formData.title,
+      event_type: finalEventTypeName,
+      event_type_id: formData.event_type_id || null,
+      custom_event_type: finalEventTypeName === 'Outro' ? formData.custom_event_type : null,
+      status: formData.status,
+      customer_id: formData.customer_id || null,
+      start_date: formData.start_date,
+      end_date: formData.end_date,
+      start_time: formData.start_time,
+      end_time: formData.end_time,
+      guests: formData.guests,
+      total_value: formData.total_value,
+      signal_value: formData.signal_value,
+      notes: formData.notes,
+      organization_id: profile.company_id
     };
 
     let res;
@@ -251,13 +274,55 @@ function EventsPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Tipo de Evento</Label>
-                  <Input 
-                    value={formData.event_type}
-                    onChange={(e) => setFormData({...formData, event_type: e.target.value})}
-                    placeholder="Ex: Casamento, Aniversário"
-                  />
+                  <Select 
+                    value={formData.event_type_id} 
+                    onValueChange={(v) => {
+                      const t = eventTypes.find(item => item.id === v);
+                      setFormData({
+                        ...formData, 
+                        event_type_id: v, 
+                        event_type: t ? t.name : formData.event_type
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo de evento" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-64">
+                      {Object.entries(
+                        eventTypes.reduce((acc: Record<string, typeof eventTypes>, item) => {
+                          if (!acc[item.category]) acc[item.category] = [];
+                          acc[item.category].push(item);
+                          return acc;
+                        }, {})
+                      ).map(([category, items]) => (
+                        <div key={category} className="p-1">
+                          <div className="text-xs font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
+                            {category}
+                          </div>
+                          {items.map(item => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.name}
+                            </SelectItem>
+                          ))}
+                        </div>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+
+              {formData.event_type === 'Outro' && (
+                <div className="space-y-1.5">
+                  <Label>Especifique o Tipo de Evento</Label>
+                  <Input 
+                    value={formData.custom_event_type}
+                    onChange={(e) => setFormData({...formData, custom_event_type: e.target.value})}
+                    placeholder="Digite o nome do evento..."
+                    required
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">

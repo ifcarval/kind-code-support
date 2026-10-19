@@ -1,12 +1,22 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface EventTypeItem {
+  id: string;
+  name: string;
+  category: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
 export interface EventItem {
   id: string;
   organization_id: string;
   customer_id?: string | null;
   title: string;
   event_type?: string | null;
+  event_type_id?: string | null;
+  custom_event_type?: string | null;
   status: 'QUOTE' | 'RESERVED' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   start_date: string;
   end_date?: string | null;
@@ -23,10 +33,24 @@ export interface EventItem {
 
 export function useEvents() {
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [eventTypes, setEventTypes] = useState<EventTypeItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const fetchEventTypes = async () => {
+    const { data, error } = await supabase
+      .from("event_types" as any)
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+
+    if (!error && data) {
+      setEventTypes(data as unknown as EventTypeItem[]);
+    }
+  };
 
   const fetchEvents = async () => {
     setLoading(true);
+    await fetchEventTypes();
     const { data, error } = await supabase
       .from("events" as any)
       .select(`
@@ -78,8 +102,10 @@ export function useEvents() {
 
   return {
     events,
+    eventTypes,
     loading,
     fetchEvents,
+    fetchEventTypes,
     createEvent,
     updateEvent,
     cancelEvent

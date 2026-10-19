@@ -96,6 +96,190 @@ function SettingsGuard() {
   return <SettingsPage />;
 }
 
+function EventTypesSettingsManagement() {
+  const [eventTypesList, setEventTypesList] = useState<any[]>([]);
+  const [loadingTypes, setLoadingTypes] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingType, setEditingType] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    category: "Festas sociais",
+    is_active: true,
+    sort_order: 0
+  });
+
+  const fetchTypes = async () => {
+    setLoadingTypes(true);
+    const { data } = await supabase
+      .from("event_types" as any)
+      .select("*")
+      .order("category", { ascending: true })
+      .order("sort_order", { ascending: true });
+    if (data) setEventTypesList(data);
+    setLoadingTypes(false);
+  };
+
+  useEffect(() => {
+    fetchTypes();
+  }, []);
+
+  const handleOpen = (item?: any) => {
+    if (item) {
+      setEditingType(item);
+      setFormData({
+        name: item.name,
+        category: item.category,
+        is_active: item.is_active,
+        sort_order: item.sort_order || 0
+      });
+    } else {
+      setEditingType(null);
+      setFormData({
+        name: "",
+        category: "Festas sociais",
+        is_active: true,
+        sort_order: eventTypesList.length * 10
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingType) {
+      const { error } = await supabase
+        .from("event_types" as any)
+        .update(formData)
+        .eq("id", editingType.id);
+      if (error) sonnerToast.error("Erro ao atualizar: " + error.message);
+      else {
+        sonnerToast.success("Tipo de evento atualizado!");
+        setIsModalOpen(false);
+        fetchTypes();
+      }
+    } else {
+      const { error } = await supabase
+        .from("event_types" as any)
+        .insert([formData]);
+      if (error) sonnerToast.error("Erro ao criar: " + error.message);
+      else {
+        sonnerToast.success("Tipo de evento criado!");
+        setIsModalOpen(false);
+        fetchTypes();
+      }
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Deseja excluir este tipo de evento?")) {
+      const { error } = await supabase.from("event_types" as any).delete().eq("id", id);
+      if (error) sonnerToast.error("Erro ao excluir: " + error.message);
+      else {
+        sonnerToast.success("Excluído com sucesso.");
+        fetchTypes();
+      }
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Tipos de Eventos</CardTitle>
+          <CardDescription>Cadastre, ative, desative e reordene os tipos de eventos do salão.</CardDescription>
+        </div>
+        <Button onClick={() => handleOpen()} className="gap-2">
+          <Plus className="h-4 w-4" /> Novo Tipo
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {loadingTypes ? (
+          <div className="flex justify-center p-6"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Categoria</TableHead>
+                <TableHead>Ordem</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {eventTypesList.map(et => (
+                <TableRow key={et.id}>
+                  <TableCell className="font-medium">{et.name}</TableCell>
+                  <TableCell>{et.category}</TableCell>
+                  <TableCell>{et.sort_order}</TableCell>
+                  <TableCell>
+                    <span className={cn("inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold", et.is_active ? "bg-emerald-500/15 text-emerald-500" : "bg-destructive/15 text-destructive")}>
+                      {et.is_active ? "Ativo" : "Inativo"}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => handleOpen(et)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(et.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingType ? "Editar Tipo de Evento" : "Novo Tipo de Evento"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSave} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Nome</Label>
+              <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Ex: Casamento" required />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Categoria</Label>
+              <Select value={formData.category} onValueChange={(v) => setFormData({...formData, category: v})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Festas sociais">Festas sociais</SelectItem>
+                  <SelectItem value="Eventos religiosos">Eventos religiosos</SelectItem>
+                  <SelectItem value="Eventos empresariais e profissionais">Eventos empresariais e profissionais</SelectItem>
+                  <SelectItem value="Eventos educacionais e comunitários">Eventos educacionais e comunitários</SelectItem>
+                  <SelectItem value="Reuniões e celebrações diversas">Reuniões e celebrações diversas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Ordem</Label>
+                <Input type="number" value={formData.sort_order} onChange={(e) => setFormData({...formData, sort_order: Number(e.target.value)})} />
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch checked={formData.is_active} onCheckedChange={(v) => setFormData({...formData, is_active: v})} />
+                <Label>Ativo</Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+              <Button type="submit">Salvar</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
 function SettingsPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -214,25 +398,26 @@ function SettingsPage() {
 
   return (
     <AppLayout>
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Settings className="h-6 w-6" />
+            Configurações
+          </h1>
+          <ThemeToggle />
+        </div>
 
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Settings className="h-6 w-6" />
-          Configurações
-        </h1>
-        <ThemeToggle />
-      </div>
-
-        
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto">
           <Tabs defaultValue="profile" className="w-full max-w-4xl mx-auto">
-            <TabsList className="grid w-full grid-cols-4 mb-8">
+            <TabsList className="grid w-full grid-cols-5 mb-8">
               <TabsTrigger value="profile" className="gap-2">
                 <User className="h-4 w-4" /> Perfil
               </TabsTrigger>
               <TabsTrigger value="company" className="gap-2">
                 <Building2 className="h-4 w-4" /> Empresa
+              </TabsTrigger>
+              <TabsTrigger value="event-types" className="gap-2">
+                <Calendar className="h-4 w-4" /> Tipos de Evento
               </TabsTrigger>
               <TabsTrigger value="notifications" className="gap-2">
                 <Bell className="h-4 w-4" /> Mensagens
@@ -314,6 +499,10 @@ function SettingsPage() {
                   </CardFooter>
                 </form>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="event-types">
+              <EventTypesSettingsManagement />
             </TabsContent>
 
             <TabsContent value="notifications">
@@ -559,5 +748,3 @@ function SettingsPage() {
     </AppLayout>
   );
 }
-
-
