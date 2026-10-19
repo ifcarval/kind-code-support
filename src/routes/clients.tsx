@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, Users, Search, Filter, Eye, Edit, Trash2, AlertCircle, RefreshCw } from "lucide-react";
+import { Loader2, Plus, Users, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/use-profile";
 import { 
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/clients")({
 });
 
 function ClientsGuard() {
-  const { profile, isOwner, isLoading: profileLoading } = useProfile();
+  const { profile, isOwner, isLoading: profileLoading, isMaster } = useProfile();
   const navigate = useNavigate();
 
   if (profileLoading) {
@@ -39,7 +39,7 @@ function ClientsGuard() {
     );
   }
 
-  const isSuperAdminOrOwner = isOwner || profile?.role === 'super_admin' || profile?.role === 'master' || profile?.email === 'igor.carvalho76@gmail.com';
+  const isSuperAdminOrOwner = isMaster || isOwner || profile?.role === 'super_admin' || profile?.role === 'master' || profile?.email === 'igor.carvalho76@gmail.com';
 
   if (!isSuperAdminOrOwner && profile) {
     return (
@@ -66,7 +66,7 @@ function ClientsGuard() {
 }
 
 function ClientsPage() {
-  const { clients, loading, orgLoading, orgReady, orgError, fetchClients, deleteClient, createClient, updateClient } = useClients();
+  const { clients, loading, fetchClients, deleteClient, createClient, updateClient } = useClients();
   const [searchTerm, setSearchTerm] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -172,35 +172,11 @@ function ClientsPage() {
           <Button 
             className="gap-2"
             onClick={() => handleOpenModal()}
-            disabled={!orgReady || orgLoading}
           >
-            {orgLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Plus className="h-4 w-4" />
-            )}
-            {orgLoading ? "Carregando..." : "Novo Cliente"}
+            <Plus className="h-4 w-4" />
+            Novo Cliente
           </Button>
         </div>
-
-        {orgLoading && (
-          <div className="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 p-4 rounded-lg flex items-center gap-2 text-sm">
-            <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-            <span>Carregando organização e vínculos do operador... O botão Novo Cliente será liberado em instantes.</span>
-          </div>
-        )}
-
-        {orgError && (
-          <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 shrink-0" />
-              <span>{orgError}</span>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => fetchClients(searchTerm)} className="gap-2 shrink-0">
-              <RefreshCw className="h-3.5 w-3.5" /> Tentar novamente
-            </Button>
-          </div>
-        )}
 
         <Card>
           <CardHeader>
@@ -215,18 +191,17 @@ function ClientsPage() {
                     className="pl-8"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    disabled={!orgReady}
                   />
                 </div>
-                <Button type="submit" variant="secondary" disabled={!orgReady}>Buscar</Button>
-                <Button type="button" variant="outline" size="icon" onClick={() => fetchClients(searchTerm)} disabled={!orgReady}>
+                <Button type="submit" variant="secondary">Buscar</Button>
+                <Button type="button" variant="outline" size="icon" onClick={() => fetchClients(searchTerm)}>
                   <Filter className="h-4 w-4" />
                 </Button>
               </form>
             </div>
           </CardHeader>
           <CardContent>
-            {loading || orgLoading ? (
+            {loading ? (
               <div className="flex flex-col items-center justify-center p-12 gap-3 text-muted-foreground">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <p className="text-sm">Carregando listagem...</p>
@@ -263,7 +238,7 @@ function ClientsPage() {
                             variant="ghost" 
                             size="icon" 
                             title="Visualizar Detalhes"
-                            onClick={() => useNavigate({ to: `/clients/${client.id}` })}
+                            onClick={() => navigate({ to: `/clients/${client.id}` as any })}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -288,7 +263,7 @@ function ClientsPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {clients.length === 0 && !orgLoading && (
+                  {clients.length === 0 && !loading && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                         <div className="flex flex-col items-center justify-center gap-2">
@@ -310,7 +285,7 @@ function ClientsPage() {
             <DialogHeader>
               <DialogTitle>{editingClient ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
               <DialogDescription>
-                Preencha os dados do cliente para associar à organização atual.
+                Preencha os dados cadastrais do cliente.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
