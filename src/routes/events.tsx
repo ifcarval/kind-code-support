@@ -103,44 +103,55 @@ function EventsPage() {
     setIsViewModalOpen(true);
   };
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile?.company_id) return;
-
-    const selectedTypeObj = eventTypes.find(t => t.id === formData.event_type_id);
-    const finalEventTypeName = selectedTypeObj ? selectedTypeObj.name : formData.event_type;
-    const isOther = finalEventTypeName === 'Outro';
-
-    const payload = {
-      title: formData.title,
-      event_type: isOther ? formData.custom_event_type : finalEventTypeName,
-      event_type_id: formData.event_type_id || null,
-      custom_event_type: isOther ? formData.custom_event_type : null,
-      status: formData.status,
-      customer_id: formData.customer_id || null,
-      start_date: formData.start_date,
-      end_date: formData.end_date,
-      start_time: formData.start_time,
-      end_time: formData.end_time,
-      guests: formData.guests,
-      total_value: formData.total_value,
-      signal_value: formData.signal_value,
-      notes: formData.notes,
-      organization_id: profile.company_id
-    };
-
-    let res;
-    if (editingId) {
-      res = await updateEvent(editingId, payload);
-    } else {
-      res = await createEvent(payload);
+    if (isSaving) return;
+    if (!profile?.company_id) {
+      toast.error("Organização não carregada. Aguarde ou refaça o login.");
+      return;
     }
 
-    if (res.error) {
-      toast.error("Erro ao salvar evento: " + res.error.message);
-    } else {
-      toast.success(editingId ? "Evento atualizado!" : "Evento criado!");
-      setIsModalOpen(false);
+    setIsSaving(true);
+    try {
+      const selectedTypeObj = eventTypes.find(t => t.id === formData.event_type_id);
+      const finalEventTypeName = selectedTypeObj ? selectedTypeObj.name : formData.event_type;
+      const isOther = finalEventTypeName === 'Outro';
+
+      const payload = {
+        title: formData.title,
+        event_type: isOther ? formData.custom_event_type : finalEventTypeName,
+        event_type_id: formData.event_type_id || null,
+        custom_event_type: isOther ? formData.custom_event_type : null,
+        status: formData.status,
+        customer_id: formData.customer_id || null,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        start_time: formData.start_time,
+        end_time: formData.end_time,
+        guests: formData.guests,
+        total_value: formData.total_value,
+        signal_value: formData.signal_value,
+        notes: formData.notes,
+        organization_id: profile.company_id
+      };
+
+      let res;
+      if (editingId) {
+        res = await updateEvent(editingId, payload);
+      } else {
+        res = await createEvent(payload);
+      }
+
+      if (res.error) {
+        toast.error("Erro ao salvar evento: " + res.error.message);
+      } else {
+        toast.success(editingId ? "Evento atualizado com sucesso!" : "Evento criado com sucesso!");
+        setIsModalOpen(false);
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -434,8 +445,11 @@ function EventsPage() {
               </div>
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                <Button type="submit">Salvar Evento</Button>
+                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={isSaving}>Cancelar</Button>
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Salvar Evento
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
