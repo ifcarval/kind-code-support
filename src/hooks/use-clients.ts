@@ -15,7 +15,7 @@ export function useClients() {
 
   const getOrganizationId = useCallback(async (): Promise<string | null> => {
     try {
-      // 1. Tentar pegar do perfil atual se já carregado
+      // 1. Tentar pegar do perfil atual do operador logado
       if (profile?.organization_id) {
         return profile.organization_id;
       }
@@ -28,7 +28,7 @@ export function useClients() {
       const userEmail = (currentSession.user.email || "").toLowerCase();
       const isMasterUser = isMaster || userEmail === 'igor.carvalho76@gmail.com' || userEmail === 'igor.felipe76@gmail.com';
 
-      // 2. Consultar profile no banco com timeout / tratamento explícito
+      // 2. Consultar profile do operador
       const { data: profileData, error: profileErr } = await supabase
         .from("profiles")
         .select("organization_id, role")
@@ -41,7 +41,7 @@ export function useClients() {
         return profileData.organization_id;
       }
 
-      // 3. Consultar organization_members (sem single() para evitar erro se houver mais de um)
+      // 3. Consultar organization_members do operador
       const { data: memberData, error: memberErr } = await supabase
         .from("organization_members")
         .select("organization_id, role")
@@ -52,7 +52,6 @@ export function useClients() {
       }
 
       if (memberData && memberData.length > 0) {
-        // Se houver mais de um, seleciona o primeiro ou preferência owner/master
         const preferred = memberData.find(m => m.role === 'owner' || m.role === 'admin') || memberData[0];
         return preferred.organization_id;
       }
@@ -66,7 +65,6 @@ export function useClients() {
 
         if (!orgsErr && orgs && orgs.length > 0) {
           const orgId = orgs[0].id;
-          // Tentar vincular idempotentemente
           await supabase
             .from("organization_members")
             .upsert({ user_id: userId, organization_id: orgId, role: 'owner' }, { onConflict: 'user_id,organization_id' });
@@ -80,7 +78,7 @@ export function useClients() {
         }
       }
 
-      throw new Error("Seu usuário não está vinculado a uma organização.");
+      throw new Error("Seu usuário operador não está vinculado a uma organização.");
     } catch (err: any) {
       console.error("[useClients] getOrganizationId error:", err?.message || err);
       throw err;
@@ -93,7 +91,6 @@ export function useClients() {
     setOrgError(null);
     setLoading(true);
 
-    // Timeout de segurança de 8 segundos para evitar loading infinito
     const timeoutId = setTimeout(() => {
       setOrgLoading(false);
       setOrgError("O tempo limite de conexão excedeu ao tentar carregar a organização.");
@@ -149,11 +146,13 @@ export function useClients() {
 
   const createClient = async (clientData: Omit<Database["public"]["Tables"]["customers"]["Insert"], "organization_id">) => {
     try {
+      // Obter EXCLUSIVAMENTE a organização do OPERADOR autenticado
       const orgId = await getOrganizationId();
       if (!orgId) {
-        return { data: null, error: { message: "Organização não encontrada para o usuário." } };
+        return { data: null, error: { message: "Organização do operador não encontrada." } };
       }
 
+      // Inserir APENAS o registro do cliente na tabela customers, sem criar login, profiles ou organization_members para o cliente
       const payload = {
         ...clientData,
         organization_id: orgId,
