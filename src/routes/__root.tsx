@@ -133,7 +133,8 @@ function AuthCheckWrapper({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isLoading) {
       const isLoginRoute = location.pathname.startsWith("/login");
-      if (!session && !isLoginRoute) {
+      const isPublicRoute = location.pathname.startsWith("/agendamentos");
+      if (!session && !isLoginRoute && !isPublicRoute) {
         navigate({ to: "/login" });
       } else if (session && isLoginRoute) {
         if (isCustomer) {
