@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, FileText, Edit, Copy, CheckCircle, Printer, Download, Upload, Shield, Eye, AlertTriangle } from "lucide-react";
+import { Loader2, Plus, FileText, Upload, Shield, Printer, CheckCircle, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { CurrencyInput } from "@/components/CurrencyInput";
@@ -34,7 +34,7 @@ interface ContractTemplate {
 }
 
 function ContractsPage() {
-  const { contracts, loading, createContract, updateContract, duplicateContract, signManually, releaseContract } = useContractsManager();
+  const { contracts, loading, createContract, updateContract, releaseContract } = useContractsManager();
   const { customers } = useCustomers();
   const { events } = useEvents();
   const { isMaster } = usePermissions();
@@ -43,12 +43,11 @@ function ContractsPage() {
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedContract, setSelectedContract] = useState<ContractItem | null>(null);
 
   const [templateName, setTemplateName] = useState("Contrato Padrão Salão Santa Felicidade");
   const [templateVersion, setTemplateVersion] = useState("1.0");
-  const [importedFileName, setImportedFileName] = useState("contrato-de-locacao-de-espaco-para-event.docx");
+  const [importedFileName, setImportedFileName] = useState("contrato-de-locacao-de-espaco.docx");
   const [templateContent, setTemplateContent] = useState(
     "INSTRUMENTO PARTICULAR DE CONTRATO DE PRESTAÇÃO DE SERVIÇOS E LOCAÇÃO DE ESPAÇO\n\n" +
     "CONTRATANTE: {{cliente_nome}}, portador(a) do CPF/CNPJ {{cliente_documento}}, residente em {{cliente_endereco}}, telefone {{cliente_telefone}}, e-mail {{cliente_email}}.\n\n" +
@@ -89,7 +88,7 @@ function ContractsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setImportedFileName(file.name);
-    toast.success(`Arquivo ${file.name} importado com sucesso! Prévia extraída.`);
+    toast.success(`Arquivo ${file.name} importado com sucesso! Prévia extraída para revisão.`);
   };
 
   const handleSaveTemplate = async () => {
@@ -146,7 +145,6 @@ function ContractsPage() {
     const formatDate = (d?: string) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : "--/--/----";
 
     const totalVal = selectedEvent.total_value || 0;
-    const diffVal = Math.abs(totalVal - (genSignal + genDeposit));
     const saldo = totalVal - genSignal;
 
     let content = template?.prepared_content || "";
@@ -217,7 +215,7 @@ function ContractsPage() {
     }
     const res = await releaseContract(id);
     if (res.error) toast.error("Erro ao liberar contrato");
-    else toast.success("Contrato liberado e disponibilizado para o cliente!");
+    else toast.success("Contrato liberado e disponibilizado para o cliente com sucesso!");
   };
 
   const formatCurrency = (val: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
@@ -232,7 +230,7 @@ function ContractsPage() {
           </div>
           {isMaster && (
             <div className="flex gap-2 flex-wrap">
-              <Button onClick={() => setIsTemplateModalOpen(true)} variant="outline" className="gap-2"><Upload className="h-4 w-4" /> Importar Modelo</Button>
+              <Button onClick={() => setIsTemplateModalOpen(true)} variant="outline" className="gap-2"><Upload className="h-4 w-4" /> Importar modelo</Button>
               <Button onClick={handleOpenGenerate} className="gap-2"><Plus className="h-4 w-4" /> Gerar Contrato por Evento</Button>
             </div>
           )}
@@ -241,7 +239,7 @@ function ContractsPage() {
         {isMaster && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5 text-primary" /> Modelos de Contrato Cadastrados</CardTitle>
+              <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5 text-primary" /> Modelos de contrato</CardTitle>
               <CardDescription>Modelos oficiais utilizados para extração e geração determinística de contratos.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -260,6 +258,7 @@ function ContractsPage() {
                       <Button variant="ghost" size="sm" onClick={() => {
                         setTemplateName(tpl.name);
                         setTemplateContent(tpl.prepared_content);
+                        setTemplateVersion(tpl.version);
                         setIsTemplateModalOpen(true);
                       }}>Revisar</Button>
                     </div>
@@ -302,7 +301,7 @@ function ContractsPage() {
                       <TableCell><Badge variant="outline">v{item.current_version}</Badge></TableCell>
                       <TableCell>
                         <Badge variant={item.status === 'active' || item.released ? 'default' : 'secondary'}>
-                          {item.released ? 'Liberado' : 'Rascunho'} 
+                          {item.released ? 'Liberado' : 'Rascunho'}
                         </Badge>
                       </TableCell>
                       <TableCell>
