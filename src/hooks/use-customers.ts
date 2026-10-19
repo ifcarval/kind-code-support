@@ -3,10 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface CustomerItem {
   id: string;
-  name: string;
+  nome_razao_social: string;
   email?: string;
-  phone?: string;
-  document?: string;
+  telefone?: string;
+  cpf_cnpj?: string;
 }
 
 export function useCustomers() {
@@ -16,9 +16,9 @@ export function useCustomers() {
   const fetchCustomers = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("customers" as any)
-      .select("*")
-      .order("name");
+      .from("clients")
+      .select("id, nome_razao_social, email, telefone, cpf_cnpj")
+      .order("nome_razao_social");
 
     if (!error && data) {
       setCustomers(data as unknown as CustomerItem[]);

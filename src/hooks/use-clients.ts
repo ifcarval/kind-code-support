@@ -3,24 +3,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { useProfile } from "./use-profile";
 
-export type Customer = Database["public"]["Tables"]["customers"]["Row"];
+export type Client = Database["public"]["Tables"]["clients"]["Row"];
+export type Customer = Client;
 
 export function useClients() {
-  const [clients, setClients] = useState<Customer[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const { isMaster } = useProfile();
+  const { profile } = useProfile();
 
   const fetchClients = useCallback(async (search?: string) => {
     setLoading(true);
     try {
       let query = supabase
-        .from("customers")
+        .from("clients")
         .select("*")
-        .order("name");
+        .order("nome_razao_social");
 
       if (search && search.trim() !== "") {
         const term = search.trim();
-        query = query.or(`name.ilike.%${term}%,email.ilike.%${term}%,document.ilike.%${term}%,phone.ilike.%${term}%,whatsapp.ilike.%${term}%`);
+        query = query.or(`nome_razao_social.ilike.%${term}%,email.ilike.%${term}%,cpf_cnpj.ilike.%${term}%,telefone.ilike.%${term}%,telefone_secundario.ilike.%${term}%`);
       }
 
       const { data, error } = await query;
@@ -39,13 +40,25 @@ export function useClients() {
     }
   }, []);
 
-  const createClient = async (clientData: Omit<Database["public"]["Tables"]["customers"]["Insert"], "organization_id">) => {
+  const createClient = async (clientData: any) => {
     try {
+      const companyId = profile?.company_id;
+      if (!companyId) {
+        return { data: null, error: { message: "Empresa não encontrada no perfil do usuário." } };
+      }
+
       const payload = {
-        ...clientData,
+        company_id: companyId,
+        nome_razao_social: clientData.name || clientData.nome_razao_social,
+        cpf_cnpj: clientData.document || clientData.cpf_cnpj,
+        email: clientData.email,
+        telefone: clientData.phone || clientData.telefone,
+        telefone_secundario: clientData.whatsapp || clientData.telefone_secundario,
+        endereco: clientData.address || clientData.endereco,
+        status: clientData.status || "ativo",
       };
 
-      const { data, error } = await supabase.from("customers").insert(payload).select().single();
+      const { data, error } = await supabase.from("clients").insert(payload).select().single();
       if (!error && data) {
         setClients(prev => [data, ...prev]);
       }
@@ -55,8 +68,27 @@ export function useClients() {
     }
   };
 
-  const updateClient = async (id: string, clientData: Database["public"]["Tables"]["customers"]["Update"]) => {
-    const { data, error } = await supabase.from("customers").update(clientData).eq("id", id).select().single();
+  const updateClient = async (id: string, clientData: any) => {
+    const payload: any = {};
+    if (clientData.name !== undefined || clientData.nome_razao_social !== undefined) {
+      payload.nome_razao_social = clientData.name || clientData.nome_razao_social;
+    }
+    if (clientData.document !== undefined || clientData.cpf_cnpj !== undefined) {
+      payload.cpf_cnpj = clientData.document || clientData.cpf_cnpj;
+    }
+    if (clientData.email !== undefined) payload.email = clientData.email;
+    if (clientData.phone !== undefined || clientData.telefone !== undefined) {
+      payload.telefone = clientData.phone || clientData.telefone;
+    }
+    if (clientData.whatsapp !== undefined || clientData.telefone_secundario !== undefined) {
+      payload.telefone_secundario = clientData.whatsapp || clientData.telefone_secundario;
+    }
+    if (clientData.address !== undefined || clientData.endereco !== undefined) {
+      payload.endereco = clientData.address || clientData.endereco;
+    }
+    if (clientData.status !== undefined) payload.status = clientData.status;
+
+    const { data, error } = await supabase.from("clients").update(payload).eq("id", id).select().single();
     if (!error && data) {
       setClients(prev => prev.map(c => c.id === id ? data : c));
     }
@@ -64,7 +96,7 @@ export function useClients() {
   };
 
   const deleteClient = async (id: string) => {
-    const { error } = await supabase.from("customers").delete().eq("id", id);
+    const { error } = await supabase.from("clients").delete().eq("id", id);
     if (!error) {
       setClients(prev => prev.filter(c => c.id !== id));
     }

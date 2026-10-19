@@ -102,12 +102,12 @@ function ClientsPage() {
     if (client) {
       setEditingClient(client);
       setFormData({
-        name: client.name || client.nome_razao_social || "",
-        document: client.document || client.cpf_cnpj || "",
+        name: client.nome_razao_social || client.name || "",
+        document: client.cpf_cnpj || client.document || "",
         email: client.email || "",
-        phone: client.phone || client.telefone || "",
-        whatsapp: client.whatsapp || "",
-        address: client.address || client.endereco || "",
+        phone: client.telefone || client.phone || "",
+        whatsapp: client.telefone_secundario || client.whatsapp || "",
+        address: client.endereco || client.address || "",
         status: client.status || "ativo"
       });
     } else {
@@ -221,15 +221,15 @@ function ClientsPage() {
                   {clients.map((client) => (
                     <TableRow key={client.id}>
                       <TableCell className="font-medium">
-                        <div>{client.name || client.nome_razao_social}</div>
-                        {(client.address || client.endereco) && (
-                          <div className="text-xs text-muted-foreground truncate max-w-xs">{client.address || client.endereco}</div>
+                        <div>{client.nome_razao_social || client.name}</div>
+                        {(client.endereco || client.address) && (
+                          <div className="text-xs text-muted-foreground truncate max-w-xs">{client.endereco || client.address}</div>
                         )}
                       </TableCell>
-                      <TableCell>{client.document || client.cpf_cnpj || "N/A"}</TableCell>
+                      <TableCell>{client.cpf_cnpj || client.document || "N/A"}</TableCell>
                       <TableCell>
                         <div className="text-sm">{client.email || "-"}</div>
-                        <div className="text-xs text-muted-foreground">{client.phone || client.telefone || client.whatsapp || "-"}</div>
+                        <div className="text-xs text-muted-foreground">{client.telefone || client.telefone_secundario || client.phone || client.whatsapp || "-"}</div>
                       </TableCell>
                       <TableCell>{getStatusBadge(client.status)}</TableCell>
                       <TableCell className="text-right">

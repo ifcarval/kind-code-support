@@ -58,7 +58,7 @@ function ClientDetailsPage() {
           <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/clients" })}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold">{client.name}</h1>
+          <h1 className="text-2xl font-bold">{client.nome_razao_social || client.name}</h1>
           <Badge variant={client.status === "ativo" ? "default" : "secondary"}>{client.status || "ativo"}</Badge>
         </div>
 
@@ -100,7 +100,7 @@ function ClientDetailsPage() {
             <CardContent className="space-y-4">
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground font-medium uppercase">Documento</p>
-                <p className="text-sm">{client.document || "Não informado"}</p>
+                <p className="text-sm">{client.cpf_cnpj || client.document || "Não informado"}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground font-medium uppercase">Contato</p>
@@ -108,14 +108,14 @@ function ClientDetailsPage() {
                   <Mail className="h-3.5 w-3.5" /> {client.email || "Não informado"}
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-3.5 w-3.5" /> {client.phone || client.whatsapp || "Não informado"}
+                  <Phone className="h-3.5 w-3.5" /> {client.telefone || client.telefone_secundario || client.phone || client.whatsapp || "Não informado"}
                 </div>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground font-medium uppercase">Endereço</p>
                 <div className="flex items-start gap-2 text-sm">
                   <MapPin className="h-3.5 w-3.5 mt-0.5" />
-                  <span>{client.address || "Não informado"}</span>
+                  <span>{client.endereco || client.address || "Não informado"}</span>
                 </div>
               </div>
             </CardContent>

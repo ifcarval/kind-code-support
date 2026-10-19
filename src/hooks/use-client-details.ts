@@ -16,9 +16,9 @@ export function useClientDetails(clientId: string) {
   const fetchData = async () => {
     setLoading(true);
     
-    // Fetch Customer Data from customers table
+    // Fetch Client Data from clients table
     const { data: clientData } = await supabase
-      .from("customers")
+      .from("clients")
       .select("*")
       .eq("id", clientId)
       .single();
@@ -26,13 +26,37 @@ export function useClientDetails(clientId: string) {
     setClient(clientData);
 
     // Fetch related services/contracts if applicable
-    setServices([]);
-    setInvoices([]);
+    const { data: servicesData } = await supabase
+      .from("client_services")
+      .select("*")
+      .eq("client_id", clientId);
+
+    const { data: invoicesData } = await supabase
+      .from("invoices")
+      .select("*")
+      .eq("client_id", clientId);
+
+    setServices(servicesData || []);
+    setInvoices(invoicesData || []);
+
+    let faturado = 0;
+    let pago = 0;
+    let aberto = 0;
+    let vencido = 0;
+
+    (invoicesData || []).forEach((inv: any) => {
+      const val = Number(inv.valor_final || 0);
+      faturado += val;
+      if (inv.status === 'paga') pago += val;
+      else if (inv.status === 'vencida') vencido += val;
+      else aberto += val;
+    });
+
     setStats({
-      totalFaturado: 0,
-      totalPago: 0,
-      totalEmAberto: 0,
-      totalVencido: 0,
+      totalFaturado: faturado,
+      totalPago: pago,
+      totalEmAberto: aberto,
+      totalVencido: vencido,
     });
 
     setLoading(false);
