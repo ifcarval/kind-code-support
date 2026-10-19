@@ -16,7 +16,7 @@ export function useProfile() {
         setTimeoutReached(true);
         setSessionLoading(false);
       }
-    }, 12000);
+    }, 10000);
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (isMounted) {
@@ -49,7 +49,7 @@ export function useProfile() {
   const { data: profile, isLoading: profileLoading, error: profileError, refetch } = useQuery({
     queryKey: ["profile", session?.user?.id],
     enabled: !!session?.user?.id,
-    retry: 2,
+    retry: 1,
     staleTime: 1000 * 60 * 5,
     queryFn: async () => {
       if (!session?.user?.id) return null;
@@ -63,10 +63,6 @@ export function useProfile() {
         .eq("id", userId)
         .maybeSingle();
 
-      if (error) {
-        console.error('PROFILE FETCH ERROR:', error.message, error.code);
-      }
-
       if (!data) {
         const defaultRole = isMasterEmail ? 'master' : 'customer';
         const newProfile = {
@@ -77,16 +73,15 @@ export function useProfile() {
         };
         
         const { error: upsertErr } = await supabase.from("profiles").upsert(newProfile);
-        if (upsertErr) {
-          console.error('PROFILE UPSERT ERROR:', upsertErr.message);
+        if (!upsertErr) {
+          data = newProfile;
         }
-        data = newProfile;
       } else if (isMasterEmail && data.role !== 'master') {
         await supabase.from("profiles").update({ role: 'master' }).eq('id', userId);
         data.role = 'master';
       }
 
-      return data;
+      return data || { id: userId, email: userEmail, role: isMasterEmail ? 'master' : 'customer', nome: 'Usuário' };
     },
   });
 
@@ -97,9 +92,6 @@ export function useProfile() {
   const isCustomer = rawRole === "customer" && !isMaster;
   const isCommon = !isMaster && !isCustomer;
 
-  const isLifetimeAdmin = session?.user?.email === 'igor.felipe76@gmail.com' || profile?.company?.subscription_status === 'vitalicia';
-  const isVitalicia = profile?.company?.subscription_status === 'vitalicia';
-
   return {
     session,
     profile,
@@ -108,10 +100,6 @@ export function useProfile() {
     timeoutReached: timeoutReached && !profile && !profileError,
     refetch,
     isAuthenticated: !!session,
-    isOwner: profile?.role === 'owner',
-    isUser: profile?.role === 'user',
-    isLifetimeAdmin,
-    isVitalicia,
     isMaster,
     isCustomer,
     isCommon,
