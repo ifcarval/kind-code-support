@@ -8,7 +8,7 @@ export function usePermissions() {
     if (isMaster) return true;
 
     if (isCustomer || isCommon) {
-      const allowedForCustomer = ["meus-contratos", "disponibilidade"];
+      const allowedForCustomer = ["meus-contratos"];
       return allowedForCustomer.includes(module.toLowerCase());
     }
 
