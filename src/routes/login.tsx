@@ -146,10 +146,8 @@ function LoginPage() {
         toast.success("Login realizado com sucesso!");
         
         const role = (userProfile?.role || "").toLowerCase();
-        if (role === "customer") {
-          navigate({ to: "/disponibilidade", replace: true });
-        } else if (role === "common") {
-          navigate({ to: "/events", replace: true });
+        if (role === "customer" || role === "common") {
+          navigate({ to: "/meus-contratos", replace: true });
         } else {
           navigate({ to: "/dashboard", replace: true });
         }

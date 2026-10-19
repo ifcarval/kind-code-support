@@ -89,6 +89,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   };
 
   const allNavItems = [
+    { label: "Meus contratos", icon: FileText, to: "/meus-contratos", module: "meus-contratos" },
     { label: "Agendamentos", icon: LayoutDashboard, to: "/agendamentos", module: "agendamentos" },
     { label: "Disponibilidade", icon: CalendarIcon, to: "/disponibilidade", module: "disponibilidade" },
     { label: "Minhas solicitações", icon: FileText, to: "/minhas-solicitacoes", module: "minhas-solicitacoes" },

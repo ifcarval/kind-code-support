@@ -7,14 +7,12 @@ export function usePermissions() {
     if (!session) return false;
     if (isMaster) return true;
 
-    if (isCustomer) {
-      const allowedForCustomer = ["disponibilidade", "minhas-solicitacoes"];
+    if (isCustomer || isCommon) {
+      const allowedForCustomer = ["meus-contratos", "disponibilidade"];
       return allowedForCustomer.includes(module.toLowerCase());
     }
 
-    // Regras para usuário comum
-    const allowedModulesForCommon = ["events", "calendar", "disponibilidade", "dashboard"];
-    return allowedModulesForCommon.includes(module.toLowerCase());
+    return false;
   };
 
   return {

@@ -137,12 +137,12 @@ function AuthCheckWrapper({ children }: { children: ReactNode }) {
       if (!session && !isLoginRoute && !isPublicRoute) {
         navigate({ to: "/login" });
       } else if (session && isLoginRoute) {
-        if (isCustomer) {
-          navigate({ to: "/disponibilidade" });
+        if (isCustomer || isCommon) {
+          navigate({ to: "/meus-contratos" });
         } else if (isMaster) {
           navigate({ to: "/dashboard" });
         } else {
-          navigate({ to: "/events" });
+          navigate({ to: "/meus-contratos" });
         }
       }
     }
