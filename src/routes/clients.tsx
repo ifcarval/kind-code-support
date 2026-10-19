@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, Users, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
+import { Loader2, Plus, Users, Search, Filter, Eye, Edit, Trash2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/use-profile";
 import { 
@@ -40,7 +40,7 @@ function ClientsGuard() {
   }
 
   // Permissão total para super_admin, owner ou email específico igor.carvalho76@gmail.com
-  const isSuperAdminOrOwner = isOwner || profile?.role === 'super_admin' || profile?.email === 'igor.carvalho76@gmail.com';
+  const isSuperAdminOrOwner = isOwner || profile?.role === 'super_admin' || profile?.role === 'master' || profile?.email === 'igor.carvalho76@gmail.com';
 
   if (!isSuperAdminOrOwner && profile) {
     return (
@@ -67,10 +67,11 @@ function ClientsGuard() {
 }
 
 function ClientsPage() {
-  const { clients, loading, fetchClients, deleteClient, createClient, updateClient } = useClients();
+  const { clients, loading, orgLoading, fetchClients, deleteClient, createClient, updateClient } = useClients();
   const [searchTerm, setSearchTerm] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingClient, setEditingClient] = useState<any>(null);
   const [formData, setFormData] = useState<any>({
     name: "",
@@ -127,19 +128,27 @@ function ClientsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
+    setIsSubmitting(true);
     let result;
-    if (editingClient) {
-      result = await updateClient(editingClient.id, formData);
-    } else {
-      result = await createClient(formData);
-    }
+    try {
+      if (editingClient) {
+        result = await updateClient(editingClient.id, formData);
+      } else {
+        result = await createClient(formData);
+      }
 
-    if (result.error) {
-      toast.error("Erro ao salvar cliente: " + result.error.message);
-    } else {
-      toast.success(editingClient ? "Cliente atualizado!" : "Cliente criado!");
-      setIsModalOpen(false);
+      if (result.error) {
+        toast.error("Erro ao salvar cliente: " + result.error.message);
+      } else {
+        toast.success(editingClient ? "Cliente atualizado com sucesso!" : "Cliente cadastrado com sucesso!");
+        setIsModalOpen(false);
+      }
+    } catch (err: any) {
+      toast.error("Erro inesperado ao salvar: " + (err?.message || "Erro desconhecido"));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -159,13 +168,28 @@ function ClientsPage() {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Users className="h-6 w-6" />
-            Clientes (Tabela customers)
+            Clientes
           </h1>
-          <Button className="gap-2" onClick={() => handleOpenModal()}>
-            <Plus className="h-4 w-4" />
-            Novo Cliente
+          <Button 
+            className="gap-2"
+            onClick={() => handleOpenModal()}
+            disabled={orgLoading}
+          >
+            {orgLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            {orgLoading ? "Carregando organização..." : "Novo Cliente"}
           </Button>
         </div>
+
+        {orgLoading && (
+          <div className="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 p-4 rounded-lg flex items-center gap-2 text-sm">
+            <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+            <span>Carregando organização e vínculos do operador... O botão Novo Cliente será liberado em instantes.</span>
+          </div>
+        )}
 
         <Card>
           <CardHeader>
@@ -269,7 +293,7 @@ function ClientsPage() {
             <DialogHeader>
               <DialogTitle>{editingClient ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
               <DialogDescription>
-                Preencha os dados do cliente.
+                {orgLoading ? "Carregando organização..." : "Preencha os dados do cliente para associar à organização atual."}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -344,8 +368,11 @@ function ClientsPage() {
                 />
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                <Button type="submit">Salvar</Button>
+                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={isSubmitting}>Cancelar</Button>
+                <Button type="submit" disabled={orgLoading || isSubmitting}>
+                  {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  {orgLoading ? "Carregando..." : isSubmitting ? "Salvando..." : "Salvar"}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>

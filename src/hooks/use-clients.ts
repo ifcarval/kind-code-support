@@ -8,27 +8,75 @@ export type Customer = Database["public"]["Tables"]["customers"]["Row"];
 export function useClients() {
   const [clients, setClients] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
-  const { profile } = useProfile();
+  const [orgLoading, setOrgLoading] = useState(true);
+  const { profile, session } = useProfile();
 
-  const getOrganizationId = async () => {
-    if (profile?.organization_id) return profile.organization_id;
-    
-    // Fallback: fetch user's organization member record
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) return null;
+  const getOrganizationId = async (): Promise<string | null> => {
+    // 1. Tentar pegar do perfil atual se já carregado
+    if (profile?.organization_id) {
+      return profile.organization_id;
+    }
 
-    const { data: member } = await supabase
+    // 2. Tentar via sessão atual
+    const currentSession = session || (await supabase.auth.getSession()).data.session;
+    if (!currentSession?.user?.id) return null;
+    const userId = currentSession.user.id;
+    const userEmail = (currentSession.user.email || "").toLowerCase();
+    const isMasterEmail = userEmail === 'igor.carvalho76@gmail.com' || userEmail === 'igor.felipe76@gmail.com';
+
+    // 3. Consultar profile no banco diretamente se necessário
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("organization_id, role")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (profileData?.organization_id) {
+      return profileData.organization_id;
+    }
+
+    // 4. Consultar organization_members
+    const { data: memberData } = await supabase
       .from("organization_members")
       .select("organization_id")
-      .eq("user_id", session.user.id)
-      .single();
+      .eq("user_id", userId);
 
-    return member?.organization_id || null;
+    if (memberData && memberData.length > 0) {
+      return memberData[0].organization_id;
+    }
+
+    // 5. Se for master e não houver vínculo explícito, buscar qualquer organização existente ou criar/vincular a do Salão Santa Felicidade
+    if (isMaster || profileData?.role === 'master' || profileData?.role === 'super_admin') {
+      const { data: orgs } = await supabase
+        .from("organizations")
+        .select("id")
+        .limit(1);
+
+      if (orgs && orgs.length > 0) {
+        const orgId = orgs[0].id;
+        // Tentar salvar o vínculo para futuras consultas
+        await supabase
+          .from("organization_members")
+          .upsert({ user_id: userId, organization_id: orgId, role: 'owner' }, { onConflict: 'user_id,organization_id' })
+          .select();
+        
+        await supabase
+          .from("profiles")
+          .update({ organization_id: orgId })
+          .eq('id', userId);
+
+        return orgId;
+      }
+    }
+
+    return null;
   };
 
   const fetchClients = async (search?: string) => {
     setLoading(true);
+    setOrgLoading(true);
     const orgId = await getOrganizationId();
+    setOrgLoading(false);
     
     let query = supabase.from("customers").select("*").order("name");
 
@@ -51,7 +99,7 @@ export function useClients() {
   const createClient = async (clientData: Omit<Database["public"]["Tables"]["customers"]["Insert"], "organization_id">) => {
     const orgId = await getOrganizationId();
     if (!orgId) {
-      return { data: null, error: { message: "Organização não encontrada para o usuário" } };
+      return { data: null, error: { message: "Organização não encontrada para o usuário." } };
     }
 
     const payload = {
@@ -84,14 +132,16 @@ export function useClients() {
 
   useEffect(() => {
     fetchClients();
-  }, []);
+  }, [profile?.id]);
 
   return {
     clients,
     loading,
+    orgLoading,
     fetchClients,
     createClient,
     updateClient,
     deleteClient,
+    getOrganizationId,
   };
 }
