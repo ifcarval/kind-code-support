@@ -56,7 +56,7 @@ export function useEvents() {
       .from("events" as any)
       .select(`
         *,
-        customer:clients(nome_razao_social)
+        customer:customers(name)
       `)
       .order("start_date", { ascending: true });
 

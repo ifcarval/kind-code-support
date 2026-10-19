@@ -3,10 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface CustomerItem {
   id: string;
-  nome_razao_social: string;
+  name: string;
+  nome_razao_social?: string;
   email?: string;
+  phone?: string;
   telefone?: string;
+  document?: string;
   cpf_cnpj?: string;
+  status?: string;
 }
 
 export function useCustomers() {
@@ -16,12 +20,18 @@ export function useCustomers() {
   const fetchCustomers = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("clients")
-      .select("id, nome_razao_social, email, telefone, cpf_cnpj")
-      .order("nome_razao_social");
+      .from("customers" as any)
+      .select("id, name, email, phone, document, status")
+      .order("name");
 
     if (!error && data) {
-      setCustomers(data as unknown as CustomerItem[]);
+      const mapped = (data as any[]).map(c => ({
+        ...c,
+        nome_razao_social: c.name,
+        telefone: c.phone,
+        cpf_cnpj: c.document
+      }));
+      setCustomers(mapped as CustomerItem[]);
     }
     setLoading(false);
   };
