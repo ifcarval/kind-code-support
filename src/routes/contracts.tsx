@@ -74,7 +74,7 @@ function ContractsPage() {
   }, []);
 
   const fetchTemplates = async () => {
-    const { data, error } = await supabase.from("contract_templates" as any).select("*").order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("contract_templates" as any).select("*" ).order("created_at", { ascending: false });
     if (!error && data) {
       setTemplates(data as unknown as ContractTemplate[]);
       if (data.length > 0) {
@@ -211,6 +211,11 @@ function ContractsPage() {
   const handleRelease = async (id: string) => {
     if (!isMaster) {
       toast.error("Apenas o MASTER pode liberar contratos para os clientes.");
+      return;
+    }
+    const target = contracts.find(c => c.id === id);
+    if (target?.clauses?.includes("{{")) {
+      toast.error("Bloqueado: Existem campos obrigatórios incompletos ou marcadores não preenchidos no contrato.");
       return;
     }
     const res = await releaseContract(id);
@@ -481,7 +486,7 @@ function ContractsPage() {
                 </div>
               </div>
             )}
-          </DialogContent>
+          </DialogContent> 
         </Dialog>
       </div>
     </AppLayout>
