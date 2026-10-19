@@ -34,7 +34,7 @@ function createSupabaseClient() {
   const SUPABASE_URL = import.meta.env['VITE_SUPABASE_URL'] || process.env['SUPABASE_URL'];
   const SUPABASE_PUBLISHABLE_KEY = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || process.env['SUPABASE_PUBLISHABLE_KEY'] || import.meta.env['VITE_SUPABASE_ANON_KEY'] || process.env['SUPABASE_ANON_KEY'];
 
-  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY || SUPABASE_URL.includes('PREENCHER_COM_') || SUPABASE_PUBLISHABLE_KEY.includes('PREENCHER_COM_')) {
+  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY || SUPABASE_URL.includes('PREENCHER_COM_') || SUPABASE_PUBLISHABLE_KEY.includes('PREENCHER_COM_') || SUPABASE_URL.trim() === '' || SUPABASE_PUBLISHABLE_KEY.trim() === '') {
     const missing = [
       ...(!SUPABASE_URL || SUPABASE_URL.includes('PREENCHER_COM_') ? ['VITE_SUPABASE_URL'] : []),
       ...(!SUPABASE_PUBLISHABLE_KEY || SUPABASE_PUBLISHABLE_KEY.includes('PREENCHER_COM_') ? ['VITE_SUPABASE_PUBLISHABLE_KEY'] : []),
