@@ -92,27 +92,7 @@ CREATE INDEX IF NOT EXISTS idx_event_types_active ON public.event_types(is_activ
 CREATE TABLE IF NOT EXISTS public.events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL,
-    customer_id UUID REFERENCES public.customers(id) ON DELETE RESTRICT,
-    event_type_id UUID REFERENCES public.event_types(id) ON DELETE SET NULL,
-    custom_event_type TEXT,
-    title TEXT NOT NULL,
-    event_type TEXT,
-    status TEXT NOT NULL DEFAULT 'RESERVED',
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
-    guests INTEGER NOT NULL DEFAULT 0,
-    total_value NUMERIC(12,2) NOT NULL DEFAULT 0,
-    signal_value NUMERIC(12,2) NOT NULL DEFAULT 0,
-    notes TEXT,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
-);
-CREATE TABLE IF NOT EXISTS public.events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL,
-    customer_id UUID NOT NULL REFERENCES public.customers(id) ON DELETE RESTRICT,
+    customer_id UUID REFERENCES public.customers(id) ON DELETE SET NULL,
     event_type_id UUID REFERENCES public.event_types(id) ON DELETE SET NULL,
     custom_event_type TEXT,
     title TEXT NOT NULL,
