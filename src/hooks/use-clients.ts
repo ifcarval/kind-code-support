@@ -149,7 +149,7 @@ export function useClients() {
       // Obter EXCLUSIVAMENTE a organização do OPERADOR autenticado
       const orgId = await getOrganizationId();
       if (!orgId) {
-        return { data: null, error: { message: "Organização do operador não encontrada." } };
+        return { data: null, error: { message: "Seu usuário operador não está vinculado a uma organização." } };
       }
 
       // Inserir APENAS o registro do cliente na tabela customers, sem criar login, profiles ou organization_members para o cliente
