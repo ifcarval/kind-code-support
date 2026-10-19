@@ -41,6 +41,7 @@ export function useEvents() {
       .from("event_types" as any)
       .select("*")
       .eq("is_active", true)
+      .order("category", { ascending: true })
       .order("sort_order", { ascending: true });
 
     if (!error && data) {

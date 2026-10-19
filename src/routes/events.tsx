@@ -56,7 +56,7 @@ function EventsPage() {
     const defaultType = eventTypes.find(t => t.name === 'Casamento') || eventTypes[0];
     setFormData({
       title: "",
-      event_type: defaultType?.name || "Casamento",
+      event_type: defaultType?.name || "",
       event_type_id: defaultType?.id || "",
       custom_event_type: "",
       status: "QUOTE",
@@ -75,12 +75,15 @@ function EventsPage() {
 
   const handleOpenEdit = (ev: EventItem) => {
     setEditingId(ev.id);
-    const matchedType = eventTypes.find(t => t.id === ev.event_type_id || t.name === ev.event_type);
+    let matchedType = eventTypes.find(t => t.id === ev.event_type_id);
+    if (!matchedType && ev.event_type) {
+      matchedType = eventTypes.find(t => t.name.toLowerCase() === ev.event_type?.toLowerCase());
+    }
     setFormData({
       title: ev.title,
-      event_type: matchedType ? matchedType.name : (ev.event_type || "Casamento"),
+      event_type: matchedType ? matchedType.name : (ev.event_type || ""),
       event_type_id: matchedType ? matchedType.id : (ev.event_type_id || ""),
-      custom_event_type: ev.custom_event_type || "",
+      custom_event_type: ev.custom_event_type || (matchedType?.name === 'Outro' ? ev.event_type : "") || "",
       status: ev.status,
       customer_id: ev.customer_id || "",
       start_date: ev.start_date,
@@ -106,12 +109,13 @@ function EventsPage() {
 
     const selectedTypeObj = eventTypes.find(t => t.id === formData.event_type_id);
     const finalEventTypeName = selectedTypeObj ? selectedTypeObj.name : formData.event_type;
+    const isOther = finalEventTypeName === 'Outro';
 
     const payload = {
       title: formData.title,
-      event_type: finalEventTypeName,
+      event_type: isOther ? formData.custom_event_type : finalEventTypeName,
       event_type_id: formData.event_type_id || null,
-      custom_event_type: finalEventTypeName === 'Outro' ? formData.custom_event_type : null,
+      custom_event_type: isOther ? formData.custom_event_type : null,
       status: formData.status,
       customer_id: formData.customer_id || null,
       start_date: formData.start_date,
@@ -273,7 +277,7 @@ function EventsPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Tipo de Evento</Label>
+                  <Label>Tipo de evento</Label>
                   <Select 
                     value={formData.event_type_id} 
                     onValueChange={(v) => {
@@ -281,14 +285,14 @@ function EventsPage() {
                       setFormData({
                         ...formData, 
                         event_type_id: v, 
-                        event_type: t ? t.name : formData.event_type
+                        event_type: t ? t.name : ""
                       });
                     }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o tipo de evento" />
                     </SelectTrigger>
-                    <SelectContent className="max-h-64">
+                    <SelectContent className="max-h-72">
                       {Object.entries(
                         eventTypes.reduce((acc: Record<string, typeof eventTypes>, item) => {
                           if (!acc[item.category]) acc[item.category] = [];
@@ -297,7 +301,7 @@ function EventsPage() {
                         }, {})
                       ).map(([category, items]) => (
                         <div key={category} className="p-1">
-                          <div className="text-xs font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
+                          <div className="text-xs font-semibold text-muted-foreground px-2 py-1.5 uppercase tracking-wider bg-muted/50 rounded">
                             {category}
                           </div>
                           {items.map(item => (
@@ -314,11 +318,11 @@ function EventsPage() {
 
               {formData.event_type === 'Outro' && (
                 <div className="space-y-1.5">
-                  <Label>Especifique o Tipo de Evento</Label>
+                  <Label>Especifique o tipo de evento</Label>
                   <Input 
                     value={formData.custom_event_type}
                     onChange={(e) => setFormData({...formData, custom_event_type: e.target.value})}
-                    placeholder="Digite o nome do evento..."
+                    placeholder="Especifique o tipo de evento"
                     required
                   />
                 </div>
