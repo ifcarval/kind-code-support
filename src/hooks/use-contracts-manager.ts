@@ -7,8 +7,10 @@ export interface ContractItem {
   organization_id: string;
   customer_id?: string | null;
   event_id?: string | null;
+  template_id?: string | null;
   contract_number: string;
   status: string;
+  released?: boolean;
   current_version: number;
   payment_method?: string | null;
   deposit_amount?: number | null;
@@ -62,7 +64,6 @@ export function useContractsManager() {
       .single();
 
     if (!error && data) {
-      // Criar versão 1
       await supabase.from("contract_versions" as any).insert([{
         contract_id: (data as any).id,
         version_number: 1,
@@ -102,7 +103,8 @@ export function useContractsManager() {
     return createContract({
       ...rest,
       contract_number: `${rest.contract_number}-DUP`,
-      status: 'draft'
+      status: 'draft',
+      released: false
     });
   };
 
@@ -110,6 +112,13 @@ export function useContractsManager() {
     return updateContract(id, {
       signed_manually: true,
       signed_at: new Date().toISOString(),
+      status: 'active'
+    });
+  };
+
+  const releaseContract = async (id: string) => {
+    return updateContract(id, {
+      released: true,
       status: 'active'
     });
   };
@@ -125,6 +134,7 @@ export function useContractsManager() {
     createContract,
     updateContract,
     duplicateContract,
-    signManually
+    signManually,
+    releaseContract
   };
 }

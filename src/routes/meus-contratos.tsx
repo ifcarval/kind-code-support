@@ -44,6 +44,8 @@ function MeusContratosPage() {
   const [customerInfo, setCustomerInfo] = useState<{ name: string; email: string } | null>(null);
   const [selectedContractUrl, setSelectedContractUrl] = useState<string | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [activeContractClauses, setActiveContractClauses] = useState<string>("");
+  const [activeContractNumber, setActiveContractNumber] = useState<string>("");
 
   useEffect(() => {
     fetchMyData();
@@ -69,7 +71,6 @@ function MeusContratosPage() {
         .maybeSingle();
 
       if (!clientData) {
-        // Tentar via user_id se houver coluna
         const { data: clientByUser } = await supabase
           .from("clients" as any)
           .select("*")
@@ -129,16 +130,16 @@ function MeusContratosPage() {
 
         let contractInfo = null;
         if (contractData) {
-          // Verificar se foi liberado (status ativo ou signed ou released=true)
-          const isReleased = contractData.status === 'active' || contractData.status === 'signed' || contractData.released === true || contractData.status === 'liberado';
+          const isReleased = contractData.released === true || contractData.status === 'active' || contractData.status === 'signed' || contractData.status === 'liberado';
           if (isReleased) {
             contractInfo = {
               id: contractData.id,
-              contractNumber: contractData.contract_number || contractData.numero || "CTR-001",
+              contractNumber: contractData.contract_number || "CTR-001",
               status: contractData.status,
               released: true,
-              fileUrl: contractData.file_url || contractData.pdf_url || null,
-              totalAmount: contractData.total_amount || contractData.valor_total || 0
+              fileUrl: contractData.file_url || null,
+              totalAmount: contractData.total_amount || 0,
+              clauses: contractData.clauses || ""
             };
           }
         }
@@ -171,12 +172,9 @@ function MeusContratosPage() {
       toast.error("Seu contrato ainda não foi disponibilizado pelo salão.");
       return;
     }
-    if (contract.fileUrl) {
-      setSelectedContractUrl(contract.fileUrl);
-      setViewModalOpen(true);
-    } else {
-      toast.info("Visualização detalhada do contrato " + contract.contractNumber);
-    }
+    setActiveContractClauses((contract as any).clauses || "Contrato liberado pelo Salão Santa Felicidade.");
+    setActiveContractNumber(contract.contractNumber);
+    setViewModalOpen(true);
   };
 
   const handlePrint = () => {
@@ -339,6 +337,25 @@ function MeusContratosPage() {
                 </Card>
               );
             })}
+          </div>
+        )}
+
+        {/* Modal de Visualização do Contrato do Cliente */}
+        {viewModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white text-black p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-4 font-serif">
+              <div className="text-center border-b pb-3">
+                <h2 className="text-lg font-bold uppercase">SALÃO SANTA FELICIDADE - MEU CONTRATO</h2>
+                <p className="text-xs text-gray-600">Contrato nº {activeContractNumber}</p>
+              </div>
+              <div className="text-sm whitespace-pre-wrap leading-relaxed text-gray-800">
+                {activeContractClauses}
+              </div>
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button variant="outline" onClick={() => window.print()} className="gap-1"><Printer className="h-4 w-4" /> Imprimir</Button>
+                <Button onClick={() => setViewModalOpen(false)}>Fechar</Button>
+              </div>
+            </div>
           </div>
         )}
       </div>
