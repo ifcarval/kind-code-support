@@ -108,13 +108,30 @@ function EventsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSaving) return;
-    if (!profile?.company_id) {
-      toast.error("Organização não carregada. Aguarde ou refaça o login.");
-      return;
-    }
 
     setIsSaving(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Usuário não autenticado.");
+        setIsSaving(false);
+        return;
+      }
+
+      const { data: memberData, error: memberError } = await supabase
+        .from("organization_members" as any)
+        .select("organization_id, role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (memberError || !memberData || !(memberData as any).organization_id) {
+        toast.error("Usuário sem organização vinculada.");
+        setIsSaving(false);
+        return;
+      }
+
+      const orgId = (memberData as any).organization_id;
+
       const selectedTypeObj = eventTypes.find(t => t.id === formData.event_type_id);
       const finalEventTypeName = selectedTypeObj ? selectedTypeObj.name : formData.event_type;
       const isOther = finalEventTypeName === 'Outro';
@@ -134,7 +151,7 @@ function EventsPage() {
         total_value: formData.total_value,
         signal_value: formData.signal_value,
         notes: formData.notes,
-        organization_id: profile.company_id
+        organization_id: orgId
       };
 
       let res;

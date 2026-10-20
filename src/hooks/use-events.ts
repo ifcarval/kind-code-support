@@ -66,10 +66,37 @@ export function useEvents() {
     setLoading(false);
   };
 
+  const getOrganizationMembership = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { organizationId: null, error: new Error("Usuário não autenticado.") };
+
+    const { data, error } = await supabase
+      .from("organization_members" as any)
+      .select("organization_id, role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (error || !data || !(data as any).organization_id) {
+      return { organizationId: null, error: error || new Error("Usuário sem organização vinculada.") };
+    }
+
+    return { organizationId: (data as any).organization_id, error: null };
+  };
+
   const createEvent = async (eventData: Partial<EventItem>) => {
+    const { organizationId, error: orgError } = await getOrganizationMembership();
+    if (orgError || !organizationId) {
+      return { data: null, error: orgError || new Error("Usuário sem organização vinculada.") };
+    }
+
+    const eventPayload = {
+      ...eventData,
+      organization_id: organizationId
+    };
+
     const { data, error } = await supabase
       .from("events" as any)
-      .insert([eventData])
+      .insert([eventPayload])
       .select()
       .single();
 
