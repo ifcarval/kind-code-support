@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -110,7 +110,7 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 import { usePermissions } from "@/hooks/use-permissions";
-import { useNavigate, useLocation } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 
 function RootComponent() {
@@ -128,12 +128,22 @@ function RootComponent() {
 function AuthCheckWrapper({ children }: { children: ReactNode }) {
   const { session, isLoading, isMaster, isCustomer, isCommon, timeoutReached } = usePermissions();
   const navigate = useNavigate();
-  const location = useLocation();
+  const [pathname, setPathname] = useState(() => (
+    typeof window !== "undefined" ? window.location.pathname : ""
+  ));
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setPathname(window.location.pathname);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isLoading) {
-      const isLoginRoute = location.pathname.startsWith("/login");
-      const isPublicRoute = location.pathname.startsWith("/agendamentos");
+      const currentPath = typeof window !== "undefined" ? window.location.pathname : pathname;
+      const isLoginRoute = currentPath.startsWith("/login");
+      const isPublicRoute = currentPath.startsWith("/agendamentos") || currentPath.startsWith("/auth");
+      
       if (!session && !isLoginRoute && !isPublicRoute) {
         navigate({ to: "/login" });
       } else if (session && isLoginRoute) {
@@ -146,7 +156,7 @@ function AuthCheckWrapper({ children }: { children: ReactNode }) {
         }
       }
     }
-  }, [session, isLoading, isCustomer, isCommon, isMaster, location.pathname, navigate]);
+  }, [session, isLoading, isCustomer, isCommon, isMaster, pathname, navigate]);
 
   if (isLoading && !timeoutReached) {
     return (
