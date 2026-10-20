@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
 import { useEvents, EventItem } from "@/hooks/use-events";
-import { useClients } from "@/hooks/use-clients";
+import { useCustomers } from "@/hooks/use-customers";
 import { useProfile } from "@/hooks/use-profile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/events")({
 
 function EventsPage() {
   const { events, eventTypes, loading, createEvent, updateEvent, cancelEvent } = useEvents();
-  const { clients } = useClients();
+  const { customers: clients, fetchCustomers } = useCustomers();
   const { profile } = useProfile();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -59,6 +59,7 @@ function EventsPage() {
   const handleOpenCreate = (defaultDate?: string) => {
     setEditingId(null);
     setErrors({});
+    fetchCustomers();
     const defaultType = eventTypes.find(t => t.name === 'Casamento') || eventTypes[0];
     setFormData({
       customer_id: "",
@@ -83,6 +84,7 @@ function EventsPage() {
   const handleOpenEdit = (ev: EventItem) => {
     setEditingId(ev.id);
     setErrors({});
+    fetchCustomers();
     let matchedType = eventTypes.find(t => t.id === ev.event_type_id);
     if (!matchedType && ev.event_type) {
       matchedType = eventTypes.find(t => t.name.toLowerCase() === ev.event_type?.toLowerCase());
@@ -225,7 +227,8 @@ function EventsPage() {
 
   const filteredEvents = events.filter(e => 
     e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.customer?.nome_razao_social?.toLowerCase().includes(searchTerm.toLowerCase())
+    (e as any).customer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (e as any).customer?.nome_razao_social?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -280,7 +283,7 @@ function EventsPage() {
                   {filteredEvents.map(ev => (
                     <TableRow key={ev.id} className="cursor-pointer" onClick={() => handleView(ev)}>
                       <TableCell className="font-medium">{ev.title}</TableCell>
-                      <TableCell>{ev.customer?.nome_razao_social || "N/A"}</TableCell>
+                      <TableCell>{(ev as any).customer?.name || (ev as any).customer?.nome_razao_social || "N/A"}</TableCell>
                       <TableCell>{ev.event_type || "N/A"}</TableCell>
                       <TableCell>{format(new Date(ev.start_date + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                       <TableCell>{ev.guests || 0}</TableCell>
@@ -334,7 +337,7 @@ function EventsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {clients.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.nome_razao_social}</SelectItem>
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -574,7 +577,7 @@ function EventsPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Cliente:</span>
-                  <span className="font-medium">{selectedEvent.customer?.nome_razao_social || "Não informado"}</span>
+                  <span className="font-medium">{(selectedEvent as any).customer?.name || (selectedEvent as any).customer?.nome_razao_social || "Não informado"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Data:</span>

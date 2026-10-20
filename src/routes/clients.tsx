@@ -1,13 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
-import { useClients } from "@/hooks/use-clients";
+import { useCustomers } from "@/hooks/use-customers";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, Users, Search, Filter, Eye, Edit, Trash2 } from "lucide-react";
+import { Loader2, Plus, Users, Search, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/use-profile";
 import { 
@@ -19,7 +19,6 @@ import {
   DialogDescription 
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/clients")({
   component: ClientsGuard,
@@ -66,35 +65,27 @@ function ClientsGuard() {
 }
 
 function ClientsPage() {
-  const navigate = useNavigate();
-  const { clients, loading, fetchClients, deleteClient, createClient, updateClient } = useClients();
+  const { customers, loading, fetchCustomers, createCustomer, updateCustomer, deleteCustomer } = useCustomers();
   const [searchTerm, setSearchTerm] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingClient, setEditingClient] = useState<any>(null);
-  const [formData, setFormData] = useState<any>({
+  const [formData, setFormData] = useState({
     name: "",
     document: "",
     email: "",
-    phone: "",
-    whatsapp: "",
-    address: "",
-    status: "ativo"
+    phone: ""
   });
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchClients(searchTerm);
-  };
 
   const handleDelete = async (id: string) => {
     if (confirm("Tem certeza que deseja excluir este cliente?")) {
-      const { error } = await deleteClient(id);
+      const { error } = await deleteCustomer(id);
       if (error) {
-        toast.error("Erro ao excluir cliente: " + error.message);
+        toast.error("Erro ao excluir cliente: " + (error.message || "Erro desconhecido"));
       } else {
         toast.success("Cliente excluído com sucesso.");
+        fetchCustomers();
       }
     }
   };
@@ -103,13 +94,10 @@ function ClientsPage() {
     if (client) {
       setEditingClient(client);
       setFormData({
-        name: client.nome_razao_social || client.name || "",
-        document: client.cpf_cnpj || client.document || "",
+        name: client.name || "",
+        document: client.document || "",
         email: client.email || "",
-        phone: client.telefone || client.phone || "",
-        whatsapp: client.telefone_secundario || client.whatsapp || "",
-        address: client.endereco || client.address || "",
-        status: client.status || "ativo"
+        phone: client.phone || ""
       });
     } else {
       setEditingClient(null);
@@ -117,10 +105,7 @@ function ClientsPage() {
         name: "",
         document: "",
         email: "",
-        phone: "",
-        whatsapp: "",
-        address: "",
-        status: "ativo"
+        phone: ""
       });
     }
     setIsModalOpen(true);
@@ -129,14 +114,18 @@ function ClientsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
+    if (!formData.name.trim()) {
+      toast.error("O campo Nome é obrigatório.");
+      return;
+    }
 
     setIsSubmitting(true);
-    let result;
     try {
+      let result;
       if (editingClient) {
-        result = await updateClient(editingClient.id, formData);
+        result = await updateCustomer(editingClient.id, formData);
       } else {
-        result = await createClient(formData);
+        result = await createCustomer(formData);
       }
 
       if (result.error) {
@@ -144,6 +133,7 @@ function ClientsPage() {
       } else {
         toast.success(editingClient ? "Cliente atualizado com sucesso!" : "Cliente cadastrado com sucesso!");
         setIsModalOpen(false);
+        fetchCustomers();
       }
     } catch (err: any) {
       toast.error("Erro inesperado ao salvar: " + (err?.message || "Erro desconhecido"));
@@ -152,15 +142,12 @@ function ClientsPage() {
     }
   };
 
-  const getStatusBadge = (status: string | null) => {
-    const variants: Record<string, any> = {
-      ativo: "default",
-      inativo: "secondary",
-      bloqueado: "destructive",
-      prospect: "outline",
-    };
-    return <Badge variant={variants[status || ""] || "default"}>{status || "ativo"}</Badge>;
-  };
+  const filteredCustomers = customers.filter(c => 
+    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (c.document && c.document.includes(searchTerm)) ||
+    (c.phone && c.phone.includes(searchTerm))
+  );
 
   return (
     <AppLayout>
@@ -183,7 +170,7 @@ function ClientsPage() {
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
               <CardTitle>Listagem de Clientes</CardTitle>
-              <form onSubmit={handleSearch} className="flex gap-2 w-full md:w-auto">
+              <div className="flex gap-2 w-full md:w-auto">
                 <div className="relative w-full md:w-64">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -194,11 +181,8 @@ function ClientsPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <Button type="submit" variant="secondary">Buscar</Button>
-                <Button type="button" variant="outline" size="icon" onClick={() => fetchClients(searchTerm)}>
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </form>
+                <Button type="button" variant="secondary" onClick={() => fetchCustomers()}>Atualizar</Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -211,38 +195,24 @@ function ClientsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Documento (CPF/CNPJ)</TableHead>
-                    <TableHead>Contato</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Nome *</TableHead>
+                    <TableHead>CPF/CNPJ</TableHead>
+                    <TableHead>E-mail</TableHead>
+                    <TableHead>Telefone</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {clients.map((client) => (
+                  {filteredCustomers.map((client) => (
                     <TableRow key={client.id}>
                       <TableCell className="font-medium">
-                        <div>{client.nome_razao_social}</div>
-                        {client.endereco && (
-                          <div className="text-xs text-muted-foreground truncate max-w-xs">{client.endereco}</div>
-                        )}
+                        <div>{client.name}</div>
                       </TableCell>
-                      <TableCell>{client.cpf_cnpj || "N/A"}</TableCell>
-                      <TableCell>
-                        <div className="text-sm">{client.email || "-"}</div>
-                        <div className="text-xs text-muted-foreground">{client.telefone || client.telefone_secundario || "-"}</div>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(client.status)}</TableCell>
+                      <TableCell>{client.document || "N/A"}</TableCell>
+                      <TableCell>{client.email || "-"}</TableCell>
+                      <TableCell>{client.phone || "-"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            title="Visualizar Detalhes"
-                            onClick={() => navigate({ to: `/clients/${client.id}` as any })}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
                           <Button 
                             variant="ghost" 
                             size="icon" 
@@ -264,7 +234,7 @@ function ClientsPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {clients.length === 0 && !loading && (
+                  {filteredCustomers.length === 0 && !loading && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                         <div className="flex flex-col items-center justify-center gap-2">
@@ -291,7 +261,7 @@ function ClientsPage() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome / Razão Social</Label>
+                <Label htmlFor="name">Nome *</Label>
                 <Input 
                   id="name" 
                   value={formData.name} 
@@ -300,64 +270,28 @@ function ClientsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="document">Documento (CPF / CNPJ)</Label>
+                <Label htmlFor="document">CPF/CNPJ</Label>
                 <Input 
                   id="document" 
                   value={formData.document} 
                   onChange={(e) => setFormData({...formData, document: e.target.value})}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email"
-                    value={formData.email} 
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone</Label>
-                  <Input 
-                    id="phone" 
-                    value={formData.phone} 
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="whatsapp">WhatsApp</Label>
-                  <Input 
-                    id="whatsapp" 
-                    value={formData.whatsapp} 
-                    onChange={(e) => setFormData({...formData, whatsapp: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select 
-                    value={formData.status || "ativo"} 
-                    onValueChange={(v) => setFormData({...formData, status: v})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ativo">Ativo</SelectItem>
-                      <SelectItem value="inativo">Inativo</SelectItem>
-                      <SelectItem value="bloqueado">Bloqueado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input 
+                  id="email" 
+                  type="email"
+                  value={formData.email} 
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="address">Endereço</Label>
+                <Label htmlFor="phone">Telefone</Label>
                 <Input 
-                  id="address" 
-                  value={formData.address} 
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  id="phone" 
+                  value={formData.phone} 
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
                 />
               </div>
               <DialogFooter>
