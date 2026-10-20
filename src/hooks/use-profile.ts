@@ -8,6 +8,7 @@ type AppProfile = {
   nome: string;
   role: string | null;
   company_id: string | null;
+  organization_id: string | null;
   avatar_url: string | null;
   cargo: string | null;
   created_at: string | null;
@@ -139,6 +140,7 @@ export function useProfile() {
         nome: session.user.user_metadata?.full_name || session.user.user_metadata?.nome || (isMasterEmail ? 'Igor Carvalho' : 'Usuário'),
         role: isMasterEmail ? 'master' : 'customer',
         company_id: null,
+        organization_id: null,
         avatar_url: null,
         cargo: null,
         created_at: null,

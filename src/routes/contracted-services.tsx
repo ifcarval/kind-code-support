@@ -175,7 +175,7 @@ function ContractsPage() {
                   <Select value={formData.customer_id} onValueChange={(v) => setFormData({...formData, customer_id: v})}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
-                      {clients.map(cl => <SelectItem key={cl.id} value={cl.id}>{cl.name}</SelectItem>)}
+                      {clients.map(cl => <SelectItem key={cl.id} value={cl.id}>{cl.nome_razao_social}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>

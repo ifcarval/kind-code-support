@@ -79,7 +79,7 @@ function ContractsPage() {
       setTemplates(data as unknown as ContractTemplate[]);
       if (data.length > 0) {
         const def = data.find((t: any) => t.is_default) || data[0];
-        setGenTemplateId(def.id);
+        if (def) setGenTemplateId((def as any).id);
       }
     }
   };
@@ -151,9 +151,9 @@ function ContractsPage() {
     const variables = {
       cliente_nome: customer?.name || customer?.nome_razao_social || "Cliente Não Informado",
       cliente_documento: customer?.document || customer?.cpf_cnpj || "000.000.000-00",
-      cliente_telefone: customer?.phone || customer?.whatsapp || "(00) 00000-0000",
+      cliente_telefone: customer?.phone || customer?.telefone || "(00) 00000-0000",
       cliente_email: customer?.email || "cliente@email.com",
-      cliente_endereco: customer?.address || "Endereço não informado",
+      cliente_endereco: "Endereço não informado",
       evento_titulo: selectedEvent.title,
       evento_tipo: selectedEvent.event_type || "Evento",
       evento_data_inicio: formatDate(selectedEvent.start_date),

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
 import { useEvents, EventItem } from "@/hooks/use-events";
 import { useClients } from "@/hooks/use-clients";
@@ -143,8 +144,8 @@ function EventsPage() {
         custom_event_type: isOther ? formData.custom_event_type : null,
         status: formData.status,
         customer_id: formData.customer_id || null,
-        start_date: formData.start_date,
-        end_date: formData.end_date,
+        start_date: formData.start_date ?? "",
+        end_date: formData.end_date ?? "",
         start_time: formData.start_time,
         end_time: formData.end_time,
         guests: formData.guests,
@@ -323,8 +324,10 @@ function EventsPage() {
                     <SelectContent className="max-h-72">
                       {Object.entries(
                         eventTypes.reduce((acc: Record<string, typeof eventTypes>, item) => {
-                          if (!acc[item.category]) acc[item.category] = [];
-                          acc[item.category].push(item);
+                          const key = item.category;
+                          const bucket = acc[key] ?? [];
+                          bucket.push(item);
+                          acc[key] = bucket;
                           return acc;
                         }, {})
                       ).map(([category, items]) => (
