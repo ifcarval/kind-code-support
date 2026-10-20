@@ -13,7 +13,6 @@ type AppProfile = {
   cargo: string | null;
   created_at: string | null;
   empresa: string | null;
-  full_name: string | null;
   telefone: string | null;
   updated_at: string | null;
   company?: {
@@ -24,61 +23,64 @@ type AppProfile = {
   } | null;
 };
 
+type OrganizationMember = {
+  organization_id: string;
+  role: string;
+};
+
 export function useProfile() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [session, setSession] = useState<any>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [timeoutReached, setTimeoutReached] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
+  const [pendingStep, setPendingStep] = useState<string>("session");
 
   useEffect(() => {
     let isMounted = true;
     
     const timer = setTimeout(() => {
       if (isMounted) {
-        console.warn("[Auth Timeout] Session/Profile load timeout reached");
+        console.warn("[Auth] timeout reached at step:", pendingStep);
         setTimeoutReached(true);
         setSessionLoading(false);
       }
-    }, 8000);
+    }, 10000);
 
     async function loadSession() {
       try {
+        setPendingStep("session");
         setSessionLoading(true);
-        console.log("[AuthDiag] getSession called");
+        console.log("[Auth] session loaded");
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error("[AuthDiag] getSession error:", error.message);
+          console.error("[Auth] session error:", error.message);
           setSessionError(error.message);
-          // Se houver erro de token inválido ou sessão antiga, limpa o storage do projeto atual
           if (error.message.includes("Invalid Refresh Token") || error.message.includes("JWT") || error.message.includes("token")) {
-            console.warn("[AuthDiag] Invalid session token detected from old project. Cleaning session.");
             for (let i = localStorage.length - 1; i >= 0; i--) {
               const key = localStorage.key(i);
               if (key && (key.includes("supabase.auth.token") || key.includes("sb-"))) {
                 localStorage.removeItem(key);
               }
             }
-            await supabase.auth.signOut().catch(() => {});
+            await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
           }
           if (isMounted) {
             setSession(null);
           }
         } else if (data?.session) {
-          console.log("[AuthDiag] session found, userId:", data.session.user?.id);
           if (isMounted) {
             setSession(data.session);
             setUserEmail(data.session.user?.email || null);
           }
         } else {
-          console.log("[AuthDiag] no session returned");
           if (isMounted) {
             setSession(null);
           }
         }
       } catch (err: any) {
-        console.error("[AuthDiag] session exception:", err?.message);
+        console.error("[Auth] session exception:", err?.message);
         if (isMounted) {
           setSessionError(err?.message);
           setSession(null);
@@ -95,7 +97,6 @@ export function useProfile() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, currentSession) => {
-      console.log("[AuthDiag] onAuthStateChange event:", _event);
       if (isMounted) {
         setSession(currentSession);
         setUserEmail(currentSession?.user?.email || null);
@@ -110,103 +111,145 @@ export function useProfile() {
     };
   }, []);
 
+  const userId = session?.user?.id;
+
   const { data: profile, isLoading: profileLoading, error: profileError, refetch } = useQuery({
-    queryKey: ["profile", session?.user?.id],
-    enabled: !!session?.user?.id,
+    queryKey: ["profile", userId],
+    enabled: !!userId,
     retry: 1,
     staleTime: 1000 * 60 * 5,
     queryFn: async () => {
-      if (!session?.user?.id) return null;
-      const userId = session.user.id;
-      const emailVal = (session.user.email || "").toLowerCase();
+      if (!userId) return null;
+      const emailVal = (session?.user?.email || "").toLowerCase();
       const isMasterEmail = emailVal === 'igor.carvalho76@gmail.com' || emailVal === 'igor.felipe76@gmail.com';
       
-      console.log("[AuthDiag] querying profile for userId:", userId);
-      let { data, error } = await supabase
-        .from("profiles")
-        .select("*, company:companies(id, name, trial_ends_at, subscription_status)")
-        .eq("id", userId)
-        .maybeSingle();
+      try {
+        setPendingStep("profile");
+        let { data, error } = await supabase
+          .from("profiles")
+          .select("*, company:companies(id, name, trial_ends_at, subscription_status)")
+          .eq("id", userId)
+          .maybeSingle();
 
-      if (error) {
-        console.error("[AuthDiag] profile query error:", error.message);
-      }
-
-      const profileData = data as unknown as AppProfile | null;
-
-      const buildFallback = (): AppProfile => ({
-        id: userId,
-        email: emailVal,
-        nome: session.user.user_metadata?.full_name || session.user.user_metadata?.nome || (isMasterEmail ? 'Igor Carvalho' : 'Usuário'),
-        role: isMasterEmail ? 'master' : 'customer',
-        company_id: null,
-        organization_id: null,
-        avatar_url: null,
-        cargo: null,
-        created_at: null,
-        empresa: null,
-        full_name: null,
-        telefone: null,
-        updated_at: null,
-        company: null,
-      });
-
-      if (!profileData) {
-        console.log("[AuthDiag] profile not found, checking master privileges");
-        const defaultRole = isMasterEmail ? 'master' : 'customer';
-        const newProfile: AppProfile = {
-          ...buildFallback(),
-          role: defaultRole,
-        };
-
-        const { error: upsertErr } = await supabase.from("profiles").upsert(newProfile as never);
-        if (!upsertErr) {
-          return newProfile;
+        if (error) {
+          console.error("[Auth] profile error:", error.message);
         }
-      } else if (isMasterEmail && profileData.role !== 'master') {
-        await supabase.from("profiles").update({ role: 'master' as never }).eq('id', userId);
-        profileData.role = 'master';
-      }
 
-      console.log("[AuthDiag] profile found:", !!profileData);
-      const fallback = buildFallback();
-      fallback.nome = 'Usuário';
-      return profileData || fallback;
+        const profileData = data as unknown as AppProfile | null;
+
+        const buildFallback = (): AppProfile => ({
+          id: userId,
+          email: emailVal,
+          nome: session?.user?.user_metadata?.nome || session?.user?.user_metadata?.full_name || (isMasterEmail ? 'Igor Carvalho' : 'Usuário'),
+          role: isMasterEmail ? 'master' : 'customer',
+          company_id: null,
+          organization_id: null,
+          avatar_url: null,
+          cargo: null,
+          created_at: null,
+          empresa: null,
+          telefone: null,
+          updated_at: null,
+          company: null,
+        });
+
+        if (!profileData) {
+          const defaultRole = isMasterEmail ? 'master' : 'customer';
+          const newProfile: AppProfile = {
+            ...buildFallback(),
+            role: defaultRole,
+          };
+
+          const { error: upsertErr } = await supabase.from("profiles").upsert(newProfile as never);
+          if (!upsertErr) {
+            console.log("[Auth] profile loaded");
+            return newProfile;
+          }
+        } else if (isMasterEmail && profileData.role !== 'master') {
+          await supabase.from("profiles").update({ role: 'master' as never }).eq('id', userId);
+          profileData.role = 'master';
+        }
+
+        console.log("[Auth] profile loaded");
+        const fallback = buildFallback();
+        return profileData || fallback;
+      } catch (err: any) {
+        console.error("[Auth] profile error exception:", err?.message);
+        throw err;
+      } finally {
+        // garante finalização
+      }
+    },
+  });
+
+  const { data: membership, isLoading: membershipLoading, error: membershipError } = useQuery({
+    queryKey: ["organization_members", userId],
+    enabled: !!userId,
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+    queryFn: async () => {
+      if (!userId) return null;
+      try {
+        setPendingStep("membership");
+        const { data, error } = await supabase
+          .from("organization_members")
+          .select("organization_id, role")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (error) {
+          console.error("[Auth] membership error:", error.message);
+        }
+        console.log("[Auth] membership loaded");
+        return data as OrganizationMember | null;
+      } catch (err: any) {
+        console.error("[Auth] membership error exception:", err?.message);
+        return null;
+      } finally {
+        // garante finalização
+      }
     },
   });
 
   const { data: lifetimeAdmin } = useQuery({
-    queryKey: ["lifetime-admin", session?.user?.id],
-    enabled: !!session?.user?.id,
+    queryKey: ["lifetime-admin", userId],
+    enabled: !!userId,
     retry: 1,
     staleTime: 1000 * 60 * 5,
     queryFn: async () => {
-      const userId = session.user!.id;
-      const { data: ok } = await supabase.rpc("is_lifetime_admin", { _user_id: userId });
-      return !!ok;
+      if (!userId) return false;
+      try {
+        const { data: ok } = await supabase.rpc("is_lifetime_admin", { _user_id: userId });
+        return !!ok;
+      } catch {
+        return false;
+      }
     },
   });
 
-  const isLoading = sessionLoading || (!!session?.user?.id && profileLoading && !timeoutReached && !profile && !profileError);
+  const isLoading = sessionLoading || (!!userId && (profileLoading || membershipLoading) && !timeoutReached && !profile);
 
   const rawRole = (profile?.role || "").toLowerCase();
-  const isMaster = userEmail === 'igor.carvalho76@gmail.com' || rawRole === "master" || rawRole === "super_admin" || (session?.user?.email || '').toLowerCase() === 'igor.carvalho76@gmail.com';
+  const isMaster = userEmail === 'igor.carvalho76@gmail.com' || rawRole === "master" || rawRole === "super_admin";
   const isCustomer = rawRole === "customer" && !isMaster;
   const isCommon = !isMaster && !isCustomer;
 
   return {
     session,
     profile,
+    membership,
     isLoading,
     profileError,
+    membershipError,
     sessionError,
     timeoutReached: timeoutReached && !profile && !profileError,
+    pendingStep,
     refetch,
     isAuthenticated: !!session,
     isMaster,
     isCustomer,
     isCommon,
-    isOwner: isMaster || rawRole === "owner",
+    isOwner: isMaster || rawRole === "owner" || membership?.role === "owner",
     isUser: rawRole === "user",
     isLifetimeAdmin: lifetimeAdmin === true,
     isVitalicia: profile?.company?.subscription_status === 'vitalicia',

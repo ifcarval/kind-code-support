@@ -173,14 +173,11 @@ function AuthCheckWrapper({ children }: { children: ReactNode }) {
             Não foi possível carregar as informações da sua conta a tempo. Verifique sua conexão ou entre novamente.
           </p>
           <button
-            onClick={() => {
-              for (let i = localStorage.length - 1; i >= 0; i--) {
-                const key = localStorage.key(i);
-                if (key && (key.includes("supabase.auth.token") || key.includes("sb-"))) {
-                  localStorage.removeItem(key);
-                }
-              }
-              window.location.href = "/login";
+            onClick={async () => {
+              try {
+                await supabase.auth.signOut({ scope: 'local' });
+              } catch {}
+              navigate({ to: "/login" });
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
