@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS public.organizations (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Inserir organização padrão 'Salão Santa Felicidade' se não existir
 INSERT INTO public.organizations (name)
 SELECT 'Salão Santa Felicidade'
 WHERE NOT EXISTS (
@@ -92,7 +91,7 @@ CREATE INDEX IF NOT EXISTS idx_event_types_category ON public.event_types(catego
 CREATE INDEX IF NOT EXISTS idx_event_types_sort ON public.event_types(sort_order);
 CREATE INDEX IF NOT EXISTS idx_event_types_active ON public.event_types(is_active);
 
--- 7. EVENTS (Garantido e verificado com FKs válidas e constraints robustas)
+-- 7. EVENTS
 CREATE TABLE IF NOT EXISTS public.events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL,
@@ -239,7 +238,6 @@ ALTER TABLE public.contracts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contract_versions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.finances ENABLE ROW LEVEL SECURITY;
 
--- Políticas RLS permissivas para o painel administrativo autenticado e master
 CREATE POLICY "Allow authenticated access on profiles" ON public.profiles FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated access on organizations" ON public.organizations FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated access on organization_members" ON public.organization_members FOR ALL TO authenticated USING (true) WITH CHECK (true);
@@ -251,14 +249,4 @@ CREATE POLICY "Allow authenticated access on contracts" ON public.contracts FOR 
 CREATE POLICY "Allow authenticated access on contract_versions" ON public.contract_versions FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated access on finances" ON public.finances FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
--- 13. SEED DE EVENT_TYPES
-INSERT INTO public.event_types (name, category, is_active, sort_order, seed_key)
-VALUES
-('Aniversário adulto', 'Festas sociais', true, 10, 'festas_aniversario_adulto'),
-('Casamento', 'Festas sociais', true, 20, 'festas_casamento'),
-('Festa infantil', 'Festas sociais', true, 30, 'festas_infantil'),
-('Confraternização de empresa', 'Eventos empresariais', true, 10, 'empresariais_confra'),
-('Reunião ou Workshop', 'Eventos empresariais', true, 20, 'empresariais_workshop'),
-('Culto ou celebração religiosa', 'Eventos religiosos', true, 10, 'religiosos_culto'),
-('Outro', 'Diversos', true, 99, 'diversos_outro')
-ON CONFLICT DO NOTHING;
+NOTIFY pgrst, 'reload schema';
