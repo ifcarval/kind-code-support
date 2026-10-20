@@ -182,22 +182,37 @@ function ContractsPage() {
       toast.warning("Atenção: Existem campos obrigatórios ou marcadores não preenchidos.");
     }
 
+    const orgId = selectedEvent.organization_id || (await supabase.auth.getSession()).data.session?.user.id;
+
     const payload = {
-      contract_number: genContractNumber,
+      organization_id: orgId,
       customer_id: selectedEvent.customer_id || null,
-      event_id: selectedEvent.id,
-      template_id: genTemplateId,
-      status: "draft",
+      landlord_id: (selectedEvent as any).landlord_id ?? null,
+      title: `Contrato - ${selectedEvent.title}`,
+      status: 'draft',
+      template_id: genTemplateId || null,
       released: false,
-      total_amount: totalVal,
-      signal_amount: genSignal,
-      deposit_amount: genDeposit,
-      discount_amount: genDiscount,
-      installments_count: genInstallments,
-      payment_method: genPaymentMethod,
-      clauses: content,
-      snapshot_variables: variables
+      contract_number: genContractNumber,
+      clauses: content ?? '',
+      snapshot_variables: {
+        event_id: selectedEvent.id,
+        event_title: selectedEvent.title,
+        event_date: selectedEvent.start_date,
+        payment_method: genPaymentMethod,
+        credit_installments: genInstallments,
+        total_value: totalVal,
+        signal_value: genSignal,
+        deposit_value: genDeposit,
+        discount: genDiscount,
+        installments: genInstallments,
+        due_day: genVencimento,
+        customer_name: customer?.name ?? (customer as any)?.nome_razao_social ?? null,
+        variables
+      }
     };
+
+    console.log("PAYLOAD EXATO ENVIADO AO SUPABASE (contracts):", JSON.stringify(payload, null, 2));
+    toast.info("Payload gerado com sucesso. Verifique o console para detalhes.");
 
     const res = await createContract(payload);
     if (res.error) {
