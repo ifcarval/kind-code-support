@@ -51,7 +51,6 @@ export function useProfile() {
       try {
         setPendingStep("session");
         setSessionLoading(true);
-        console.log("[Auth] session loaded");
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -70,11 +69,13 @@ export function useProfile() {
             setSession(null);
           }
         } else if (data?.session) {
+          console.log("[Auth] session loaded successfully");
           if (isMounted) {
             setSession(data.session);
             setUserEmail(data.session.user?.email || null);
           }
         } else {
+          console.log("[Auth] no active session found");
           if (isMounted) {
             setSession(null);
           }

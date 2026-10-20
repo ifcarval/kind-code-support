@@ -7,12 +7,14 @@ import {
   SUPABASE_PUBLISHABLE_KEY,
 } from './public-config';
 
+const isPublished = typeof window !== 'undefined' && location.hostname === 'salaodefestaapp.lovable.app';
+
 export const supabase = createClient<Database>(
   SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY,
   {
     auth: {
-      storage: brokeredPreviewStorage(),
+      storage: isPublished ? localStorage : brokeredPreviewStorage(),
       persistSession: true,
       autoRefreshToken: true,
     },
