@@ -27,10 +27,19 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseClient() {
-  const SUPABASE_URL = import.meta.env['VITE_SUPABASE_URL'] || (typeof process !== 'undefined' ? process.env?.['SUPABASE_URL'] : undefined) || 'https://placeholder.supabase.co';
-  const SUPABASE_PUBLISHABLE_KEY = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || (typeof process !== 'undefined' ? process.env?.['SUPABASE_PUBLISHABLE_KEY'] : undefined) || import.meta.env['VITE_SUPABASE_ANON_KEY'] || (typeof process !== 'undefined' ? process.env?.['SUPABASE_ANON_KEY'] : undefined) || 'placeholder-key';
+  const rawUrl = import.meta.env['VITE_SUPABASE_URL'] || (typeof process !== 'undefined' ? process.env?.['SUPABASE_URL'] : undefined);
+  const SUPABASE_URL = rawUrl && !rawUrl.includes('oxrrxyvepkxqhqcqjdjy') ? rawUrl : 'https://fngkbiwceyypdzzvwgsj.supabase.co';
+  
+  const rawKey = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || (typeof process !== 'undefined' ? process.env?.['SUPABASE_PUBLISHABLE_KEY'] : undefined) || import.meta.env['VITE_SUPABASE_ANON_KEY'] || (typeof process !== 'undefined' ? process.env?.['SUPABASE_ANON_KEY'] : undefined);
+  const SUPABASE_PUBLISHABLE_KEY = rawKey || 'placeholder-key';
 
-  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  try {
+    console.log("Supabase project:", new URL(SUPABASE_URL).hostname);
+  } catch (e) {
+    console.log("Supabase project hostname check failed", e);
+  }
+
+  const client = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     global: {
       fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY),
     },
@@ -40,6 +49,54 @@ function createSupabaseClient() {
       autoRefreshToken: true,
     }
   });
+
+  // Executar testes de diagnóstico seguros em events
+  setTimeout(async () => {
+    try {
+      const { data, error } = await client
+        .from('events' as any)
+        .select('id')
+        .limit(1);
+
+      if (error) {
+        console.error('[Supabase Diagnostics] SELECT events error:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+      } else {
+        console.log('[Supabase Diagnostics] SELECT events success:', data);
+
+        // Testar INSERT se SELECT funcionar
+        const testPayload = {
+          title: 'Diagnostico Evento Teste',
+          status: 'QUOTE',
+          start_date: new Date().toISOString().split('T')[0]
+        };
+        const { data: insertData, error: insertError } = await client
+          .from('events' as any)
+          .insert([testPayload])
+          .select('id')
+          .single();
+
+        if (insertError) {
+          console.error('[Supabase Diagnostics] INSERT events error:', {
+            code: insertError.code,
+            message: insertError.message,
+            details: insertError.details,
+            hint: insertError.hint
+          });
+        } else {
+          console.log('[Supabase Diagnostics] INSERT events success:', insertData);
+        }
+      }
+    } catch (err: any) {
+      console.error('[Supabase Diagnostics] Exception during events test:', err?.message || err);
+    }
+  }, 1000);
+
+  return client;
 }
 
 let _supabase: ReturnType<typeof createSupabaseClient> | undefined;
