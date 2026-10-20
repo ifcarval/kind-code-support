@@ -204,5 +204,9 @@ export function useProfile() {
     isMaster,
     isCustomer,
     isCommon,
+    isOwner: isMaster || rawRole === "owner",
+    isUser: rawRole === "user",
+    isLifetimeAdmin: lifetimeAdmin === true,
+    isVitalicia: profile?.company?.subscription_status === 'vitalicia',
   };
 }
