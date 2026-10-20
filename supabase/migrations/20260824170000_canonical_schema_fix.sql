@@ -216,8 +216,7 @@ BEGIN
         EXECUTE format('CREATE TRIGGER handle_updated_at BEFORE UPDATE ON public.%I FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();', tbl);
     END LOOP;
 END;
-$$
-;
+$$;
 
 -- 12. HABILITAR RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
