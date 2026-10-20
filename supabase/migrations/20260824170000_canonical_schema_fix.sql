@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS public.landlords (
 CREATE TABLE IF NOT EXISTS public.customers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL,
+    user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     name TEXT NOT NULL,
     document TEXT,
     phone TEXT,
@@ -64,10 +65,15 @@ CREATE TABLE IF NOT EXISTS public.customers (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+ALTER TABLE public.customers
+  ADD COLUMN IF NOT EXISTS user_id uuid
+  REFERENCES auth.users(id) ON DELETE SET NULL;
+
 CREATE INDEX IF NOT EXISTS idx_customers_name ON public.customers(name);
 CREATE INDEX IF NOT EXISTS idx_customers_email ON public.customers(email);
 CREATE INDEX IF NOT EXISTS idx_customers_document ON public.customers(document);
 CREATE INDEX IF NOT EXISTS idx_customers_org_id ON public.customers(organization_id);
+CREATE INDEX IF NOT EXISTS idx_customers_user_id ON public.customers(user_id);
 
 -- 6. EVENT_TYPES
 CREATE TABLE IF NOT EXISTS public.event_types (
