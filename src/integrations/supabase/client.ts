@@ -27,13 +27,8 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseClient() {
-  const rawUrl = import.meta.env['VITE_SUPABASE_URL'] || import.meta.env['SUPABASE_URL'] || 'https://fngkbiwceyypdzzvwgsj.supabase.co';
-  const SUPABASE_URL = rawUrl;
-  
-  const rawKey = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || import.meta.env['VITE_SUPABASE_ANON_KEY'] || import.meta.env['SUPABASE_PUBLISHABLE_KEY'] || import.meta.env['SUPABASE_ANON_KEY'] || (typeof process !== 'undefined' ? (process.env?.['VITE_SUPABASE_PUBLISHABLE_KEY'] || process.env?.['SUPABASE_PUBLISHABLE_KEY'] || process.env?.['VITE_SUPABASE_ANON_KEY'] || process.env?.['SUPABASE_ANON_KEY']) : undefined);
-
-  const isOldKey = rawKey && (rawKey.includes('oxrrxyvepkxqhqcqjdjy') || rawKey === 'sb_publishable_lVrf-VhGrqzxWBA8ahkhLA_bSkGnzwg');
-  const SUPABASE_PUBLISHABLE_KEY = (!isOldKey && rawKey) ? rawKey : (import.meta.env['VITE_SUPABASE_ANON_KEY'] || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuZ2tiaXdjZXl5cGR6enZ3Z3NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwMDAwMDB9.invalid_placeholder');
+  const SUPABASE_URL = 'https://fngkbiwceyypdzzvwgsj.supabase.co';
+  const SUPABASE_PUBLISHABLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuZ2tiaXdjZXl5cGR6enZ3Z3NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwMDAwMDB9.invalid_placeholder_update_in_env_if_needed';
 
   let activeHostname = '';
   try {
@@ -59,7 +54,6 @@ function createSupabaseClient() {
     try {
       console.log('[Supabase Diagnostics] URL ativa:', SUPABASE_URL);
       console.log('[Supabase Diagnostics] Project Ref ativo:', activeRef);
-      console.log('[Supabase Diagnostics] Hostname ativo:', activeHostname);
 
       const { data, error } = await client
         .from('events' as any)
@@ -69,7 +63,6 @@ function createSupabaseClient() {
       if (error) {
         console.error('[Supabase Diagnostics] ERRO EXATO DO SUPABASE (SELECT events):', {
           projectRef: activeRef,
-          hostname: activeHostname,
           code: error.code,
           message: error.message,
           details: error.details,
@@ -77,37 +70,9 @@ function createSupabaseClient() {
         });
       } else {
         console.log('[Supabase Diagnostics] SELECT events success:', data);
-
-        const testPayload = {
-          title: 'Diagnostico Evento Teste',
-          status: 'QUOTE',
-          start_date: new Date().toISOString().split('T')[0]
-        };
-        const { data: insertData, error: insertError } = await client
-          .from('events' as any)
-          .insert([testPayload])
-          .select('id')
-          .single();
-
-        if (insertError) {
-          console.error('[Supabase Diagnostics] ERRO EXATO DO SUPABASE (INSERT events):', {
-            projectRef: activeRef,
-            hostname: activeHostname,
-            code: insertError.code,
-            message: insertError.message,
-            details: insertError.details,
-            hint: insertError.hint
-          });
-        } else {
-          console.log('[Supabase Diagnostics] INSERT events success:', insertData);
-        }
       }
     } catch (err: any) {
-      console.error('[Supabase Diagnostics] Exception during events test:', {
-        projectRef: activeRef,
-        hostname: activeHostname,
-        error: err?.message || err
-      });
+      console.error('[Supabase Diagnostics] Exception during events test:', err?.message || err);
     }
   }, 1000);
 
