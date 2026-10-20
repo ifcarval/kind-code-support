@@ -282,10 +282,10 @@ function MeusContratosPage() {
                             <p className="text-xs text-muted-foreground mt-0.5">Disponibilizado e liberado pelo salão</p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Button size="sm" variant="outline" onClick={() => handleViewContract(item.contract)} className="gap-1.5">
+                            <Button size="sm" variant="outline" onClick={() => handleViewContract(item.contract ?? null)} className="gap-1.5">
                               <Eye className="h-3.5 w-3.5" /> Visualizar
                             </Button>
-                            <Button size="sm" variant="outline" onClick={() => handleViewContract(item.contract)} className="gap-1.5">
+                            <Button size="sm" variant="outline" onClick={() => handleViewContract(item.contract ?? null)} className="gap-1.5">
                               <Download className="h-3.5 w-3.5" /> Baixar PDF
                             </Button>
                             <Button size="sm" variant="outline" onClick={handlePrint} className="gap-1.5">
