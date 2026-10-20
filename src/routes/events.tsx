@@ -119,19 +119,24 @@ function EventsPage() {
         return;
       }
 
-      const { data: memberData, error: memberError } = await supabase
+      const { data: membership, error: membershipError } = await supabase
         .from("organization_members" as any)
         .select("organization_id, role")
         .eq("user_id", user.id)
-        .maybeSingle();
+        .single();
 
-      if (memberError || !memberData || !(memberData as any).organization_id) {
+      if (membershipError || !membership || !(membership as any).organization_id) {
         toast.error("Usuário sem organização vinculada.");
         setIsSaving(false);
         return;
       }
 
-      const orgId = (memberData as any).organization_id;
+      const orgId = (membership as any).organization_id;
+
+      console.log(
+        'organization_id enviado no evento:',
+        orgId
+      );
 
       const selectedTypeObj = eventTypes.find(t => t.id === formData.event_type_id);
       const finalEventTypeName = selectedTypeObj ? selectedTypeObj.name : formData.event_type;
