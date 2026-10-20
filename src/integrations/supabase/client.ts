@@ -2,8 +2,12 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { brokeredPreviewStorage } from './previewAuthStorage';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://oxrrxyvepkxqhqcqjdjy.supabase.co';
-const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+const supabaseUrl =
+  'https://fngkbiwceyypdzzvwgsj.supabase.co';
+
+// Use SOMENTE a chave PUBLICÁVEL do projeto acima.
+const supabaseKey =
+  'sb_publishable_lVrf-VhGrqzxWBA8ahkhLA_bSkGnzwg';
 
 export const supabase = createClient<Database>(
   supabaseUrl,
