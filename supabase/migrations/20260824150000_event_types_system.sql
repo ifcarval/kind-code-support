@@ -14,9 +14,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS event_types_name_category_idx ON event_types (
 -- Ativar RLS
 ALTER TABLE event_types ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Permitir leitura pública ou autenticada de event_types" ON event_types;
 CREATE POLICY "Permitir leitura pública ou autenticada de event_types" ON event_types
     FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Permitir gestão por administradores de event_types" ON event_types;
 CREATE POLICY "Permitir gestão por administradores de event_types" ON event_types
     FOR ALL USING (true);
 
