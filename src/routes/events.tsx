@@ -1,3 +1,4 @@
+type FormErrors = Partial<Record<"customer_id" | "start_date" | "start_time" | "total_value" | "payment_method" | "credit_installments", string>>;
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
@@ -53,7 +54,7 @@ function EventsPage() {
     notes: ""
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const handleOpenCreate = (defaultDate?: string) => {
     setEditingId(null);
@@ -114,7 +115,7 @@ function EventsPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: FormErrors = {};
     if (!formData.customer_id) newErrors.customer_id = "Cliente é obrigatório.";
     if (!formData.start_date) newErrors.start_date = "Data do evento é obrigatória.";
     if (!formData.start_time) newErrors.start_time = "Horário de início é obrigatório.";
