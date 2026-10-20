@@ -192,7 +192,7 @@ export function useProfile() {
       try {
         setPendingStep("membership");
         const { data, error } = await supabase
-          .from("organization_members")
+          .from("organization_members" as any)
           .select("organization_id, role")
           .eq("user_id", userId)
           .maybeSingle();
@@ -201,7 +201,7 @@ export function useProfile() {
           console.error("[Auth] membership error:", error.message);
         }
         console.log("[Auth] membership loaded");
-        return data as OrganizationMember | null;
+        return data as unknown as OrganizationMember | null;
       } catch (err: any) {
         console.error("[Auth] membership error exception:", err?.message);
         return null;
