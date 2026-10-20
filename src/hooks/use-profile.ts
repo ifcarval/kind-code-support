@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type AppProfile = {
   id: string;
@@ -32,51 +32,55 @@ export function useProfile() {
   const [sessionLoading, setSessionLoading] = useState(true);
   const [timeoutReached, setTimeoutReached] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
-  const [pendingStep, setPendingStep] = useState<string>("session");
+
+  const pendingStepRef = useRef<string>("session");
 
   useEffect(() => {
-    let isMounted = true;
-    
-    const timer = setTimeout(() => {
-      if (isMounted) {
-        console.warn("[Auth] timeout reached at step:", pendingStep);
-        setTimeoutReached(true);
-        setSessionLoading(false);
-      }
+    let mounted = true;
+
+    const timer = window.setTimeout(() => {
+      if (!mounted) return;
+
+      console.warn('[Auth] timeout reached at step:', pendingStepRef.current);
+
+      setTimeoutReached(true);
+      setSessionLoading(false);
     }, 10000);
 
     async function loadSession() {
       try {
-        setPendingStep("session");
+        pendingStepRef.current = "session";
         setSessionLoading(true);
         const { data, error } = await supabase.auth.getSession();
-        
+
         if (error) {
-          console.error("[Auth] session error:", error.message);
-          setSessionError(error.message);
-          if (isMounted) {
-            setSession(null);
-          }
-        } else if (data?.session) {
-          console.log("[Auth] session loaded successfully");
-          if (isMounted) {
-            setSession(data.session);
-            setUserEmail(data.session.user?.email || null);
-          }
-        } else {
-          console.log("[Auth] no active session found");
-          if (isMounted) {
-            setSession(null);
-          }
+          throw error;
         }
-      } catch (err: any) {
-        console.error("[Auth] session exception:", err?.message);
-        if (isMounted) {
-          setSessionError(err?.message);
+
+        if (!mounted) return;
+
+        setSession(data.session ?? null);
+
+        if (data.session) {
+          setUserEmail(data.session.user?.email ?? null);
+        }
+
+        setTimeoutReached(false);
+      } catch (error: any) {
+        console.error('[Auth] session error:', error);
+
+        if (mounted) {
           setSession(null);
+          setSessionError(
+            error instanceof Error
+              ? error.message
+              : 'Erro ao carregar sessão'
+          );
         }
       } finally {
-        if (isMounted) {
+        clearTimeout(timer);
+
+        if (mounted) {
           setSessionLoading(false);
         }
       }
@@ -86,16 +90,15 @@ export function useProfile() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
-      if (isMounted) {
-        setSession(currentSession);
-        setUserEmail(currentSession?.user?.email || null);
-        setSessionLoading(false);
-      }
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (!mounted) return;
+
+      setSession(newSession);
+      setUserEmail(newSession?.user?.email ?? null);
     });
 
     return () => {
-      isMounted = false;
+      mounted = false;
       clearTimeout(timer);
       subscription.unsubscribe();
     };
@@ -103,7 +106,12 @@ export function useProfile() {
 
   const userId = session?.user?.id;
 
-  const { data: profile, isLoading: profileLoading, error: profileError, refetch } = useQuery({
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    error: profileError,
+    refetch,
+  } = useQuery({
     queryKey: ["profile", userId],
     enabled: !!userId,
     retry: 1,
@@ -111,16 +119,18 @@ export function useProfile() {
     queryFn: async () => {
       if (!userId) return null;
       try {
-        setPendingStep("profile");
+        pendingStepRef.current = "profile";
         const { data, error } = await supabase
           .from("profiles")
-          .select(`
+          .select(
+            `
             *,
             company:companies(
               id,
               nome
             )
-          `)
+          `
+          )
           .eq("id", userId)
           .maybeSingle();
 
@@ -142,7 +152,11 @@ export function useProfile() {
     },
   });
 
-  const { data: membership, isLoading: membershipLoading, error: membershipError } = useQuery({
+  const {
+    data: membership,
+    isLoading: membershipLoading,
+    error: membershipError,
+  } = useQuery({
     queryKey: ["organization_members", userId],
     enabled: !!userId,
     retry: 1,
@@ -150,7 +164,7 @@ export function useProfile() {
     queryFn: async () => {
       if (!userId) return null;
       try {
-        setPendingStep("membership");
+        pendingStepRef.current = "membership";
         const { data, error } = await supabase
           .from("organization_members" as any)
           .select("organization_id, role")
@@ -169,13 +183,15 @@ export function useProfile() {
     },
   });
 
-  const isLoading = sessionLoading || (!!userId && (profileLoading || membershipLoading) && !timeoutReached && !profile);
+  const isLoading =
+    sessionLoading ||
+    (!!userId && (profileLoading || membershipLoading));
 
   const rawRole = (profile?.role || "").toLowerCase();
   const memberRole = (membership?.role || "").toLowerCase();
 
   const isOwner = rawRole === "owner" || memberRole === "owner";
-  const isUser = rawRole === "user";
+  const isUser = rawRole === "user" || (!rawRole && !memberRole);
 
   return {
     session,
@@ -185,8 +201,8 @@ export function useProfile() {
     profileError,
     membershipError,
     sessionError,
-    timeoutReached: timeoutReached && !profile && !profileError,
-    pendingStep,
+    timeoutReached: timeoutReached && !session && !sessionError,
+    pendingStep: pendingStepRef.current,
     refetch,
     isAuthenticated: !!session,
     isMaster: isOwner,
@@ -196,5 +212,6 @@ export function useProfile() {
     isUser,
     isLifetimeAdmin: isOwner,
     isVitalicia: false,
+    email: userEmail,
   };
 }
