@@ -27,8 +27,8 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseClient() {
-  const rawUrl = import.meta.env['VITE_SUPABASE_URL'] || import.meta.env['SUPABASE_URL'] || (typeof process !== 'undefined' ? process.env?.['SUPABASE_URL'] : undefined);
-  const SUPABASE_URL = rawUrl && !rawUrl.includes('oxrrxyvepkxqhqcqjdjy') ? rawUrl : 'https://fngkbiwceyypdzzvwgsj.supabase.co';
+  const rawUrl = import.meta.env['VITE_SUPABASE_URL'] || import.meta.env['SUPABASE_URL'] || 'https://fngkbiwceyypdzzvwgsj.supabase.co';
+  const SUPABASE_URL = rawUrl;
   
   const rawKey = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || import.meta.env['VITE_SUPABASE_ANON_KEY'] || import.meta.env['SUPABASE_PUBLISHABLE_KEY'] || import.meta.env['SUPABASE_ANON_KEY'] || (typeof process !== 'undefined' ? (process.env?.['VITE_SUPABASE_PUBLISHABLE_KEY'] || process.env?.['SUPABASE_PUBLISHABLE_KEY'] || process.env?.['VITE_SUPABASE_ANON_KEY'] || process.env?.['SUPABASE_ANON_KEY']) : undefined);
 
