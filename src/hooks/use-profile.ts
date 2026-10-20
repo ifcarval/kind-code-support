@@ -3,6 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 export function useProfile() {
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserEmail(data.user?.email || null);
+    });
+  }, []);
   const [session, setSession] = useState<any>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [timeoutReached, setTimeoutReached] = useState(false);
@@ -88,7 +95,7 @@ export function useProfile() {
   const isLoading = sessionLoading || (!!session?.user?.id && profileLoading && !timeoutReached && !profile && !profileError);
 
   const rawRole = (profile?.role || "").toLowerCase();
-  const isMaster = rawRole === "master" || rawRole === "super_admin" || (session?.user?.email || '').toLowerCase() === 'igor.carvalho76@gmail.com';
+  const isMaster = userEmail === 'igor.carvalho76@gmail.com' || rawRole === "master" || rawRole === "super_admin" || (session?.user?.email || '').toLowerCase() === 'igor.carvalho76@gmail.com';
   const isCustomer = rawRole === "customer" && !isMaster;
   const isCommon = !isMaster && !isCustomer;
 
