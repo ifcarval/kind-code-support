@@ -1,6 +1,27 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+
+type AppProfile = {
+  id: string;
+  email: string;
+  nome: string;
+  role: string | null;
+  company_id: string | null;
+  avatar_url: string | null;
+  cargo: string | null;
+  created_at: string | null;
+  empresa: string | null;
+  full_name: string | null;
+  telefone: string | null;
+  updated_at: string | null;
+  company?: {
+    id: string;
+    name: string | null;
+    trial_ends_at: string | null;
+    subscription_status: string | null;
+  } | null;
+};
 
 export function useProfile() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
