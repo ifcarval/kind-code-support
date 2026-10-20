@@ -126,7 +126,7 @@ function RootComponent() {
 }
 
 function AuthCheckWrapper({ children }: { children: ReactNode }) {
-  const { session, isLoading, isMaster, isCustomer, timeoutReached } = usePermissions();
+  const { session, isLoading, isMaster, isCustomer, isCommon, timeoutReached } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -146,7 +146,7 @@ function AuthCheckWrapper({ children }: { children: ReactNode }) {
         }
       }
     }
-  }, [session, isLoading, isCustomer, isMaster, location.pathname, navigate]);
+  }, [session, isLoading, isCustomer, isCommon, isMaster, location.pathname, navigate]);
 
   if (isLoading && !timeoutReached) {
     return (
@@ -154,6 +154,38 @@ function AuthCheckWrapper({ children }: { children: ReactNode }) {
         <div className="flex flex-col items-center gap-3 text-center px-4">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
           <p className="text-sm text-muted-foreground">Carregando informações da sua conta...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (timeoutReached) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-4 text-center px-4 max-w-md">
+          <div className="rounded-full bg-destructive/10 p-3 text-destructive">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-lg font-semibold">Tempo limite esgotado</h2>
+          <p className="text-sm text-muted-foreground">
+            Não foi possível carregar as informações da sua conta a tempo. Verifique sua conexão ou entre novamente.
+          </p>
+          <button
+            onClick={() => {
+              for (let i = localStorage.length - 1; i >= 0; i--) {
+                const key = localStorage.key(i);
+                if (key && (key.includes("supabase.auth.token") || key.includes("sb-"))) {
+                  localStorage.removeItem(key);
+                }
+              }
+              window.location.href = "/login";
+            }}
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Entrar novamente
+          </button>
         </div>
       </div>
     );

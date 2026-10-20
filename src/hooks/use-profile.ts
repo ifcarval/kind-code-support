@@ -1,18 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "@tanstack/react-router";
 
 export function useProfile() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserEmail(data.user?.email || null);
-    });
-  }, []);
   const [session, setSession] = useState<any>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [timeoutReached, setTimeoutReached] = useState(false);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -23,25 +18,65 @@ export function useProfile() {
         setTimeoutReached(true);
         setSessionLoading(false);
       }
-    }, 10000);
+    }, 8000);
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (isMounted) {
-        setSession(session);
-        setSessionLoading(false);
+    async function loadSession() {
+      try {
+        setSessionLoading(true);
+        console.log("[AuthDiag] getSession called");
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("[AuthDiag] getSession error:", error.message);
+          setSessionError(error.message);
+          // Se houver erro de token inválido ou sessão antiga, limpa o storage do projeto atual
+          if (error.message.includes("Invalid Refresh Token") || error.message.includes("JWT") || error.message.includes("token")) {
+            console.warn("[AuthDiag] Invalid session token detected from old project. Cleaning session.");
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+              const key = localStorage.key(i);
+              if (key && (key.includes("supabase.auth.token") || key.includes("sb-"))) {
+                localStorage.removeItem(key);
+              }
+            }
+            await supabase.auth.signOut().catch(() => {});
+          }
+          if (isMounted) {
+            setSession(null);
+          }
+        } else if (data?.session) {
+          console.log("[AuthDiag] session found, userId:", data.session.user?.id);
+          if (isMounted) {
+            setSession(data.session);
+            setUserEmail(data.session.user?.email || null);
+          }
+        } else {
+          console.log("[AuthDiag] no session returned");
+          if (isMounted) {
+            setSession(null);
+          }
+        }
+      } catch (err: any) {
+        console.error("[AuthDiag] session exception:", err?.message);
+        if (isMounted) {
+          setSessionError(err?.message);
+          setSession(null);
+        }
+      } finally {
+        if (isMounted) {
+          setSessionLoading(false);
+        }
       }
-    }).catch((err) => {
-      console.error('SESSION ERROR:', err);
-      if (isMounted) {
-        setSessionLoading(false);
-      }
-    });
+    }
+
+    loadSession();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      console.log("[AuthDiag] onAuthStateChange event:", _event);
       if (isMounted) {
-        setSession(session);
+        setSession(currentSession);
+        setUserEmail(currentSession?.user?.email || null);
         setSessionLoading(false);
       }
     });
@@ -61,20 +96,26 @@ export function useProfile() {
     queryFn: async () => {
       if (!session?.user?.id) return null;
       const userId = session.user.id;
-      const userEmail = (session.user.email || "").toLowerCase();
-      const isMasterEmail = userEmail === 'igor.carvalho76@gmail.com' || userEmail === 'igor.felipe76@gmail.com';
+      const emailVal = (session.user.email || "").toLowerCase();
+      const isMasterEmail = emailVal === 'igor.carvalho76@gmail.com' || emailVal === 'igor.felipe76@gmail.com';
       
+      console.log("[AuthDiag] querying profile for userId:", userId);
       let { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", userId)
         .maybeSingle();
 
+      if (error) {
+        console.error("[AuthDiag] profile query error:", error.message);
+      }
+
       if (!data) {
+        console.log("[AuthDiag] profile not found, checking master privileges");
         const defaultRole = isMasterEmail ? 'master' : 'customer';
         const newProfile = {
           id: userId,
-          email: userEmail,
+          email: emailVal,
           nome: session.user.user_metadata?.full_name || session.user.user_metadata?.nome || (isMasterEmail ? 'Igor Carvalho' : 'Usuário'),
           role: defaultRole
         };
@@ -88,7 +129,8 @@ export function useProfile() {
         data.role = 'master';
       }
 
-      return data || { id: userId, email: userEmail, role: isMasterEmail ? 'master' : 'customer', nome: 'Usuário' };
+      console.log("[AuthDiag] profile found:", !!data);
+      return data || { id: userId, email: emailVal, role: isMasterEmail ? 'master' : 'customer', nome: 'Usuário' };
     },
   });
 
@@ -104,6 +146,7 @@ export function useProfile() {
     profile,
     isLoading,
     profileError,
+    sessionError,
     timeoutReached: timeoutReached && !profile && !profileError,
     refetch,
     isAuthenticated: !!session,
