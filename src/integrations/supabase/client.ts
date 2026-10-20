@@ -32,12 +32,13 @@ function createSupabaseClient() {
   
   const rawKey = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || import.meta.env['VITE_SUPABASE_ANON_KEY'] || import.meta.env['SUPABASE_PUBLISHABLE_KEY'] || import.meta.env['SUPABASE_ANON_KEY'] || (typeof process !== 'undefined' ? (process.env?.['VITE_SUPABASE_PUBLISHABLE_KEY'] || process.env?.['SUPABASE_PUBLISHABLE_KEY'] || process.env?.['VITE_SUPABASE_ANON_KEY'] || process.env?.['SUPABASE_ANON_KEY']) : undefined);
 
-  // Assegurar que a chave antiga oxrrxyvepkxqhqcqjdjy ou chave inválida não seja usada para o novo ref
   const isOldKey = rawKey && (rawKey.includes('oxrrxyvepkxqhqcqjdjy') || rawKey === 'sb_publishable_lVrf-VhGrqzxWBA8ahkhLA_bSkGnzwg');
   const SUPABASE_PUBLISHABLE_KEY = (!isOldKey && rawKey) ? rawKey : (import.meta.env['VITE_SUPABASE_ANON_KEY'] || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuZ2tiaXdjZXl5cGR6enZ3Z3NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwMDAwMDB9.invalid_placeholder');
 
+  let activeHostname = '';
   try {
-    console.log("Supabase project:", new URL(SUPABASE_URL).hostname);
+    activeHostname = new URL(SUPABASE_URL).hostname;
+    console.log("Supabase project hostname:", activeHostname);
   } catch (e) {
     console.log("Supabase project hostname check failed", e);
   }
@@ -53,13 +54,12 @@ function createSupabaseClient() {
     }
   });
 
-  // Executar testes de diagnóstico seguros em events e reportar detalhes caso ocorra erro
   setTimeout(async () => {
+    const activeRef = 'fngkbiwceyypdzzvwgsj';
     try {
-      const activeUrl = SUPABASE_URL;
-      const activeRef = 'fngkbiwceyypdzzvwgsj';
-      console.log('[Supabase Diagnostics] URL ativa:', activeUrl);
+      console.log('[Supabase Diagnostics] URL ativa:', SUPABASE_URL);
       console.log('[Supabase Diagnostics] Project Ref ativo:', activeRef);
+      console.log('[Supabase Diagnostics] Hostname ativo:', activeHostname);
 
       const { data, error } = await client
         .from('events' as any)
@@ -68,8 +68,8 @@ function createSupabaseClient() {
 
       if (error) {
         console.error('[Supabase Diagnostics] ERRO EXATO DO SUPABASE (SELECT events):', {
-          url: activeUrl,
           projectRef: activeRef,
+          hostname: activeHostname,
           code: error.code,
           message: error.message,
           details: error.details,
@@ -91,8 +91,8 @@ function createSupabaseClient() {
 
         if (insertError) {
           console.error('[Supabase Diagnostics] ERRO EXATO DO SUPABASE (INSERT events):', {
-            url: activeUrl,
             projectRef: activeRef,
+            hostname: activeHostname,
             code: insertError.code,
             message: insertError.message,
             details: insertError.details,
@@ -104,8 +104,8 @@ function createSupabaseClient() {
       }
     } catch (err: any) {
       console.error('[Supabase Diagnostics] Exception during events test:', {
-        url: SUPABASE_URL,
-        projectRef: 'fngkbiwceyypdzzvwgsj',
+        projectRef: activeRef,
+        hostname: activeHostname,
         error: err?.message || err
       });
     }
