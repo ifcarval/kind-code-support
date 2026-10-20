@@ -132,13 +132,16 @@ CREATE TABLE IF NOT EXISTS public.contracts (
     event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE RESTRICT,
     customer_id UUID NOT NULL REFERENCES public.customers(id) ON DELETE RESTRICT,
     landlord_id UUID REFERENCES public.landlords(id) ON DELETE SET NULL,
-    contract_number TEXT NOT NULL,
+    contract_number TEXT,
     status TEXT NOT NULL DEFAULT 'Rascunho',
     current_version INTEGER NOT NULL DEFAULT 1,
     is_customer_visible BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
+
+ALTER TABLE public.contracts
+  ADD COLUMN IF NOT EXISTS contract_number TEXT;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_contracts_org_number ON public.contracts(organization_id, contract_number);
 
