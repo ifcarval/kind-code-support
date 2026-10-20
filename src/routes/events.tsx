@@ -36,39 +36,44 @@ function EventsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
+    customer_id: "",
     title: "",
     event_type: "Casamento",
     event_type_id: "",
     custom_event_type: "",
     status: "QUOTE" as EventItem['status'],
-    customer_id: "",
     start_date: new Date().toISOString().split('T')[0],
-    end_date: new Date().toISOString().split('T')[0],
     start_time: "14:00",
     end_time: "22:00",
     guests: 100,
     total_value: 0,
     signal_value: 0,
+    payment_method: "",
+    credit_installments: "1x",
     notes: ""
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const handleOpenCreate = (defaultDate?: string) => {
     setEditingId(null);
+    setErrors({});
     const defaultType = eventTypes.find(t => t.name === 'Casamento') || eventTypes[0];
     setFormData({
+      customer_id: "",
       title: "",
       event_type: defaultType?.name || "",
       event_type_id: defaultType?.id || "",
       custom_event_type: "",
       status: "QUOTE",
-      customer_id: "",
       start_date: defaultDate || new Date().toISOString().split('T')[0],
-      end_date: defaultDate || new Date().toISOString().split('T')[0],
       start_time: "14:00",
       end_time: "22:00",
       guests: 100,
       total_value: 0,
       signal_value: 0,
+      payment_method: "",
+      credit_installments: "1x",
       notes: ""
     });
     setIsModalOpen(true);
@@ -76,24 +81,26 @@ function EventsPage() {
 
   const handleOpenEdit = (ev: EventItem) => {
     setEditingId(ev.id);
+    setErrors({});
     let matchedType = eventTypes.find(t => t.id === ev.event_type_id);
     if (!matchedType && ev.event_type) {
       matchedType = eventTypes.find(t => t.name.toLowerCase() === ev.event_type?.toLowerCase());
     }
     setFormData({
+      customer_id: ev.customer_id || "",
       title: ev.title,
       event_type: matchedType ? matchedType.name : (ev.event_type || ""),
       event_type_id: matchedType ? matchedType.id : (ev.event_type_id || ""),
       custom_event_type: ev.custom_event_type || (matchedType?.name === 'Outro' ? ev.event_type : "") || "",
       status: ev.status,
-      customer_id: ev.customer_id || "",
       start_date: ev.start_date,
-      end_date: ev.end_date || ev.start_date,
       start_time: ev.start_time || "",
       end_time: ev.end_time || "",
       guests: ev.guests || 0,
       total_value: ev.total_value || 0,
       signal_value: ev.signal_value || 0,
+      payment_method: ev.payment_method || "",
+      credit_installments: ev.credit_installments || "1x",
       notes: ev.notes || ""
     });
     setIsModalOpen(true);
@@ -106,8 +113,25 @@ function EventsPage() {
 
   const [isSaving, setIsSaving] = useState(false);
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.customer_id) newErrors.customer_id = "Cliente é obrigatório.";
+    if (!formData.start_date) newErrors.start_date = "Data do evento é obrigatória.";
+    if (!formData.start_time) newErrors.start_time = "Horário de início é obrigatório.";
+    if (formData.total_value === undefined || formData.total_value === null || formData.total_value <= 0) {
+      newErrors.total_value = "Valor Total é obrigatório.";
+    }
+    if (!formData.payment_method) newErrors.payment_method = "Forma de Pagamento é obrigatória.";
+    if (formData.payment_method === "Cartão de Crédito" && !formData.credit_installments) {
+      newErrors.credit_installments = "Parcelamento é obrigatório para Cartão de Crédito.";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
     if (isSaving) return;
 
     setIsSaving(true);
@@ -133,29 +157,26 @@ function EventsPage() {
 
       const orgId = (membership as any).organization_id;
 
-      console.log(
-        'organization_id enviado no evento:',
-        orgId
-      );
-
       const selectedTypeObj = eventTypes.find(t => t.id === formData.event_type_id);
       const finalEventTypeName = selectedTypeObj ? selectedTypeObj.name : formData.event_type;
       const isOther = finalEventTypeName === 'Outro';
 
       const payload = {
-        title: formData.title,
+        title: formData.title || finalEventTypeName || "Evento",
         event_type: isOther ? formData.custom_event_type : finalEventTypeName,
         event_type_id: formData.event_type_id || null,
         custom_event_type: isOther ? formData.custom_event_type : null,
         status: formData.status,
         customer_id: formData.customer_id || null,
         start_date: formData.start_date ?? "",
-        end_date: formData.end_date ?? "",
+        end_date: formData.start_date ?? "",
         start_time: formData.start_time,
         end_time: formData.end_time,
         guests: formData.guests,
         total_value: formData.total_value,
         signal_value: formData.signal_value,
+        payment_method: formData.payment_method,
+        credit_installments: formData.payment_method === "Cartão de Crédito" ? formData.credit_installments : null,
         notes: formData.notes,
         organization_id: orgId
       };
@@ -249,6 +270,7 @@ function EventsPage() {
                     <TableHead>Data</TableHead>
                     <TableHead>Convidados</TableHead>
                     <TableHead>Valor Total</TableHead>
+                    <TableHead>Pagamento</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -262,6 +284,7 @@ function EventsPage() {
                       <TableCell>{format(new Date(ev.start_date + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                       <TableCell>{ev.guests || 0}</TableCell>
                       <TableCell>{formatCurrency(ev.total_value || 0)}</TableCell>
+                      <TableCell>{ev.payment_method || "N/A"} {ev.payment_method === "Cartão de Crédito" && ev.credit_installments ? `(${ev.credit_installments})` : ""}</TableCell>
                       <TableCell>{getStatusBadge(ev.status)}</TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end gap-1">
@@ -282,7 +305,7 @@ function EventsPage() {
                   ))}
                   {filteredEvents.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         Nenhum evento encontrado.
                       </TableCell>
                     </TableRow>
@@ -294,24 +317,42 @@ function EventsPage() {
         </Card>
 
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="max-w-xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? "Editar Evento" : "Novo Evento"}</DialogTitle>
-              <DialogDescription>Preencha os dados do evento ou locação.</DialogDescription>
+              <DialogDescription>Preencha os dados principais do evento ou locação.</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Cliente (Obrigatório) no Topo */}
                 <div className="space-y-1.5">
-                  <Label>Título do Evento</Label>
+                  <Label className="font-medium">Cliente <span className="text-destructive">*</span></Label>
+                  <Select value={formData.customer_id} onValueChange={(v) => { setFormData({...formData, customer_id: v}); setErrors({...errors, customer_id: ""}); }}>
+                    <SelectTrigger className={errors.customer_id ? "border-destructive" : ""}>
+                      <SelectValue placeholder="Selecione o cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.nome_razao_social}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.customer_id && <p className="text-xs text-destructive mt-1">{errors.customer_id}</p>}
+                </div>
+
+                {/* Título do Evento */}
+                <div className="space-y-1.5">
+                  <Label className="font-medium">Título do Evento</Label>
                   <Input 
                     value={formData.title} 
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
                     placeholder="Ex: Casamento Ana e João"
-                    required
                   />
                 </div>
+
+                {/* Tipo de Evento */}
                 <div className="space-y-1.5">
-                  <Label>Tipo de evento</Label>
+                  <Label className="font-medium">Tipo de Evento</Label>
                   <Select 
                     value={formData.event_type_id} 
                     onValueChange={(v) => {
@@ -350,36 +391,22 @@ function EventsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
 
-              {formData.event_type === 'Outro' && (
-                <div className="space-y-1.5">
-                  <Label>Especifique o tipo de evento</Label>
-                  <Input 
-                    value={formData.custom_event_type}
-                    onChange={(e) => setFormData({...formData, custom_event_type: e.target.value})}
-                    placeholder="Especifique o tipo de evento"
-                    required
-                  />
-                </div>
-              )}
+                {formData.event_type === 'Outro' && (
+                  <div className="space-y-1.5">
+                    <Label className="font-medium">Especifique o tipo de evento</Label>
+                    <Input 
+                      value={formData.custom_event_type}
+                      onChange={(e) => setFormData({...formData, custom_event_type: e.target.value})}
+                      placeholder="Especifique o tipo de evento"
+                      required
+                    />
+                  </div>
+                )}
 
-              <div className="grid grid-cols-2 gap-4">
+                {/* Status */}
                 <div className="space-y-1.5">
-                  <Label>Cliente</Label>
-                  <Select value={formData.customer_id} onValueChange={(v) => setFormData({...formData, customer_id: v})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.nome_razao_social}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Status</Label>
+                  <Label className="font-medium">Status</Label>
                   <Select value={formData.status} onValueChange={(v: any) => setFormData({...formData, status: v})}>
                     <SelectTrigger>
                       <SelectValue />
@@ -394,84 +421,132 @@ function EventsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
+                {/* Data do Evento (Obrigatória) */}
                 <div className="space-y-1.5">
-                  <Label>Data de Início</Label>
+                  <Label className="font-medium">Data do Evento <span className="text-destructive">*</span></Label>
                   <Input 
                     type="date"
                     value={formData.start_date}
-                    onChange={(e) => setFormData({...formData, start_date: e.target.value})}
-                    required
+                    onChange={(e) => { setFormData({...formData, start_date: e.target.value}); setErrors({...errors, start_date: ""}); }}
+                    className={errors.start_date ? "border-destructive" : ""}
                   />
+                  {errors.start_date && <p className="text-xs text-destructive mt-1">{errors.start_date}</p>}
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Data de Término</Label>
-                  <Input 
-                    type="date"
-                    value={formData.end_date}
-                    onChange={(e) => setFormData({...formData, end_date: e.target.value})}
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Hora Início</Label>
-                  <Input 
-                    type="time"
-                    value={formData.start_time}
-                    onChange={(e) => setFormData({...formData, start_time: e.target.value})}
-                  />
+                {/* Horário (Início / Término) */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1.5">
+                    <Label className="font-medium">Hora Início <span className="text-destructive">*</span></Label>
+                    <Input 
+                      type="time"
+                      value={formData.start_time}
+                      onChange={(e) => { setFormData({...formData, start_time: e.target.value}); setErrors({...errors, start_time: ""}); }}
+                      className={errors.start_time ? "border-destructive" : ""}
+                    />
+                    {errors.start_time && <p className="text-xs text-destructive mt-1">{errors.start_time}</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="font-medium">Hora Término</Label>
+                    <Input 
+                      type="time"
+                      value={formData.end_time}
+                      onChange={(e) => setFormData({...formData, end_time: e.target.value})}
+                    />
+                  </div>
                 </div>
+
+                {/* Nº de Convidados */}
                 <div className="space-y-1.5">
-                  <Label>Hora Término</Label>
-                  <Input 
-                    type="time"
-                    value={formData.end_time}
-                    onChange={(e) => setFormData({...formData, end_time: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Nº Convidados</Label>
+                  <Label className="font-medium">Nº de Convidados</Label>
                   <Input 
                     type="number"
                     value={formData.guests}
                     onChange={(e) => setFormData({...formData, guests: parseInt(e.target.value) || 0})}
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
+                {/* Valor Total (Obrigatório) */}
                 <div className="space-y-1.5">
-                  <Label>Valor Total</Label>
+                  <Label className="font-medium">Valor Total <span className="text-destructive">*</span></Label>
                   <CurrencyInput 
                     value={formData.total_value}
-                    onChange={(v) => setFormData({...formData, total_value: v})}
+                    onChange={(v) => { setFormData({...formData, total_value: v}); setErrors({...errors, total_value: ""}); }}
                   />
+                  {errors.total_value && <p className="text-xs text-destructive mt-1">{errors.total_value}</p>}
                 </div>
+
+                {/* Sinal / Entrada */}
                 <div className="space-y-1.5">
-                  <Label>Sinal / Entrada</Label>
+                  <Label className="font-medium">Sinal / Entrada</Label>
                   <CurrencyInput 
                     value={formData.signal_value}
                     onChange={(v) => setFormData({...formData, signal_value: v})}
                   />
                 </div>
+
+                {/* Forma de Pagamento (Obrigatório) */}
+                <div className="space-y-1.5">
+                  <Label className="font-medium">Forma de Pagamento <span className="text-destructive">*</span></Label>
+                  <Select 
+                    value={formData.payment_method} 
+                    onValueChange={(v) => {
+                      setFormData({...formData, payment_method: v});
+                      setErrors({...errors, payment_method: "", credit_installments: ""});
+                    }}
+                  >
+                    <SelectTrigger className={errors.payment_method ? "border-destructive" : ""}>
+                      <SelectValue placeholder="Selecione a forma de pagamento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
+                      <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
+                      <SelectItem value="Pix">Pix</SelectItem>
+                      <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                      <SelectItem value="Cheque">Cheque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.payment_method && <p className="text-xs text-destructive mt-1">{errors.payment_method}</p>}
+                </div>
+
+                {/* Parcelamento condicional para Cartão de Crédito */}
+                {formData.payment_method === "Cartão de Crédito" && (
+                  <div className="space-y-1.5">
+                    <Label className="font-medium">Parcelado em quantas vezes? <span className="text-destructive">*</span></Label>
+                    <Select 
+                      value={formData.credit_installments} 
+                      onValueChange={(v) => { setFormData({...formData, credit_installments: v}); setErrors({...errors, credit_installments: ""}); }}
+                    >
+                      <SelectTrigger className={errors.credit_installments ? "border-destructive" : ""}>
+                        <SelectValue placeholder="Selecione as parcelas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["1x", "2x", "3x", "4x", "5x", "6x", "7x", "8x", "9x", "10x", "11x", "12x"].map(inst => (
+                          <SelectItem key={inst} value={inst}>{inst}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.credit_installments && <p className="text-xs text-destructive mt-1">{errors.credit_installments}</p>}
+                  </div>
+                )}
               </div>
 
+              {/* Observações ocupa linha inteira */}
               <div className="space-y-1.5">
-                <Label>Observações</Label>
+                <Label className="font-medium">Observações</Label>
                 <Textarea 
                   value={formData.notes}
                   onChange={(e) => setFormData({...formData, notes: e.target.value})}
                   placeholder="Detalhes adicionais..."
+                  rows={3}
                 />
               </div>
 
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={isSaving}>Cancelar</Button>
-                <Button type="submit" disabled={isSaving}>
+              <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t">
+                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={isSaving}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSaving} className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow">
                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Salvar Evento
                 </Button>
@@ -515,6 +590,13 @@ function EventsPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Sinal:</span>
                   <span>{formatCurrency(selectedEvent.signal_value || 0)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Forma de Pagamento:</span>
+                  <span className="font-medium">
+                    {selectedEvent.payment_method || "Não informado"}
+                    {selectedEvent.payment_method === "Cartão de Crédito" && selectedEvent.credit_installments ? ` (${selectedEvent.credit_installments})` : ""}
+                  </span>
                 </div>
                 {selectedEvent.notes && (
                   <div className="pt-2 border-t">

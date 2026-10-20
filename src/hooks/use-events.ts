@@ -26,6 +26,8 @@ export interface EventItem {
   total_value?: number | null;
   signal_value?: number | null;
   notes?: string | null;
+  payment_method?: string | null;
+  credit_installments?: string | null;
   created_at?: string;
   updated_at?: string;
   customer?: { nome_razao_social: string } | null;
