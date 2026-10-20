@@ -27,11 +27,14 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseClient() {
-  const rawUrl = import.meta.env['VITE_SUPABASE_URL'] || (typeof process !== 'undefined' ? process.env?.['SUPABASE_URL'] : undefined);
+  const rawUrl = import.meta.env['VITE_SUPABASE_URL'] || import.meta.env['SUPABASE_URL'] || (typeof process !== 'undefined' ? process.env?.['SUPABASE_URL'] : undefined);
   const SUPABASE_URL = rawUrl && !rawUrl.includes('oxrrxyvepkxqhqcqjdjy') ? rawUrl : 'https://fngkbiwceyypdzzvwgsj.supabase.co';
   
-  const rawKey = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || (typeof process !== 'undefined' ? process.env?.['SUPABASE_PUBLISHABLE_KEY'] : undefined) || import.meta.env['VITE_SUPABASE_ANON_KEY'] || (typeof process !== 'undefined' ? process.env?.['SUPABASE_ANON_KEY'] : undefined);
-  const SUPABASE_PUBLISHABLE_KEY = rawKey || 'sb_publishable_lVrf-VhGrqzxWBA8ahkhLA_bSkGnzwg';
+  const rawKey = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || import.meta.env['VITE_SUPABASE_ANON_KEY'] || import.meta.env['SUPABASE_PUBLISHABLE_KEY'] || import.meta.env['SUPABASE_ANON_KEY'] || (typeof process !== 'undefined' ? (process.env?.['VITE_SUPABASE_PUBLISHABLE_KEY'] || process.env?.['SUPABASE_PUBLISHABLE_KEY'] || process.env?.['VITE_SUPABASE_ANON_KEY'] || process.env?.['SUPABASE_ANON_KEY']) : undefined);
+
+  // Assegurar que a chave antiga oxrrxyvepkxqhqcqjdjy ou chave inválida não seja usada para o novo ref
+  const isOldKey = rawKey && (rawKey.includes('oxrrxyvepkxqhqcqjdjy') || rawKey === 'sb_publishable_lVrf-VhGrqzxWBA8ahkhLA_bSkGnzwg');
+  const SUPABASE_PUBLISHABLE_KEY = (!isOldKey && rawKey) ? rawKey : (import.meta.env['VITE_SUPABASE_ANON_KEY'] || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuZ2tiaXdjZXl5cGR6enZ3Z3NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwMDAwMDB9.invalid_placeholder');
 
   try {
     console.log("Supabase project:", new URL(SUPABASE_URL).hostname);
@@ -50,16 +53,23 @@ function createSupabaseClient() {
     }
   });
 
-  // Executar testes de diagnóstico seguros em events
+  // Executar testes de diagnóstico seguros em events e reportar detalhes caso ocorra erro
   setTimeout(async () => {
     try {
+      const activeUrl = SUPABASE_URL;
+      const activeRef = 'fngkbiwceyypdzzvwgsj';
+      console.log('[Supabase Diagnostics] URL ativa:', activeUrl);
+      console.log('[Supabase Diagnostics] Project Ref ativo:', activeRef);
+
       const { data, error } = await client
         .from('events' as any)
         .select('id')
         .limit(1);
 
       if (error) {
-        console.error('[Supabase Diagnostics] SELECT events error:', {
+        console.error('[Supabase Diagnostics] ERRO EXATO DO SUPABASE (SELECT events):', {
+          url: activeUrl,
+          projectRef: activeRef,
           code: error.code,
           message: error.message,
           details: error.details,
@@ -68,7 +78,6 @@ function createSupabaseClient() {
       } else {
         console.log('[Supabase Diagnostics] SELECT events success:', data);
 
-        // Testar INSERT se SELECT funcionar
         const testPayload = {
           title: 'Diagnostico Evento Teste',
           status: 'QUOTE',
@@ -81,7 +90,9 @@ function createSupabaseClient() {
           .single();
 
         if (insertError) {
-          console.error('[Supabase Diagnostics] INSERT events error:', {
+          console.error('[Supabase Diagnostics] ERRO EXATO DO SUPABASE (INSERT events):', {
+            url: activeUrl,
+            projectRef: activeRef,
             code: insertError.code,
             message: insertError.message,
             details: insertError.details,
@@ -92,7 +103,11 @@ function createSupabaseClient() {
         }
       }
     } catch (err: any) {
-      console.error('[Supabase Diagnostics] Exception during events test:', err?.message || err);
+      console.error('[Supabase Diagnostics] Exception during events test:', {
+        url: SUPABASE_URL,
+        projectRef: 'fngkbiwceyypdzzvwgsj',
+        error: err?.message || err
+      });
     }
   }, 1000);
 
