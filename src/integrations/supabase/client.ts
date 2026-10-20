@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { brokeredPreviewStorage } from './previewAuthStorage';
+
 import {
   SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY,
