@@ -107,8 +107,6 @@ function LoginPage() {
     });
   }, [navigate]);
 
-
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -131,29 +129,23 @@ function LoginPage() {
       } else if (!data.session) {
         toast.error("Sessão não foi criada corretamente. Tente novamente.");
       } else {
-        console.log('SESSION OK');
-        
-        // Buscar profile para determinar redirecionamento correto
         const { data: userProfile } = await supabase
           .from("profiles")
           .select("role")
           .eq("id", data.session.user.id)
           .maybeSingle();
 
-        console.log('PROFILE OK');
-        console.log('AUTH READY');
-
         toast.success("Login realizado com sucesso!");
         
         const role = (userProfile?.role || "").toLowerCase();
-        if (role === "customer" || role === "common") {
+        if (role === "user") {
           navigate({ to: "/meus-contratos", replace: true });
         } else {
           navigate({ to: "/dashboard", replace: true });
         }
       }
     } catch (err: any) {
-      console.error('LOGIN ERROR:', err);
+      console.error("LOGIN ERROR:", err);
       toast.error("Não foi possível conectar ao servidor.");
     } finally {
       setLoading(false);
@@ -186,7 +178,7 @@ function LoginPage() {
             nome: fullName.trim(),
             full_name: fullName.trim(),
             phone: phone.trim(),
-            role: "customer"
+            role: "user"
           }
         }
       });
@@ -338,7 +330,6 @@ function LoginPage() {
                     </button>
                   </div>
 
-                  {/* Regras e Indicador Visual de Senha */}
                   {password && (
                     <div className="mt-2 space-y-2 rounded-md bg-zinc-950/60 p-2.5 border border-zinc-800 text-xs">
                       <div className="flex items-center justify-between mb-1">

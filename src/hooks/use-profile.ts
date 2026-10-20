@@ -17,9 +17,7 @@ type AppProfile = {
   updated_at: string | null;
   company?: {
     id: string;
-    name: string | null;
-    trial_ends_at: string | null;
-    subscription_status: string | null;
+    nome: string | null;
   } | null;
 };
 
@@ -56,15 +54,6 @@ export function useProfile() {
         if (error) {
           console.error("[Auth] session error:", error.message);
           setSessionError(error.message);
-          if (error.message.includes("Invalid Refresh Token") || error.message.includes("JWT") || error.message.includes("token")) {
-            for (let i = localStorage.length - 1; i >= 0; i--) {
-              const key = localStorage.key(i);
-              if (key && (key.includes("supabase.auth.token") || key.includes("sb-"))) {
-                localStorage.removeItem(key);
-              }
-            }
-            await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
-          }
           if (isMounted) {
             setSession(null);
           }
@@ -121,64 +110,34 @@ export function useProfile() {
     staleTime: 1000 * 60 * 5,
     queryFn: async () => {
       if (!userId) return null;
-      const emailVal = (session?.user?.email || "").toLowerCase();
-      const isMasterEmail = emailVal === 'igor.carvalho76@gmail.com' || emailVal === 'igor.felipe76@gmail.com';
-      
       try {
         setPendingStep("profile");
-        let { data, error } = await supabase
+        const { data, error } = await supabase
           .from("profiles")
-          .select("*, company:companies(id, name, trial_ends_at, subscription_status)")
+          .select(`
+            *,
+            company:companies(
+              id,
+              nome
+            )
+          `)
           .eq("id", userId)
           .maybeSingle();
 
         if (error) {
           console.error("[Auth] profile error:", error.message);
+          throw error;
         }
 
-        const profileData = data as unknown as AppProfile | null;
-
-        const buildFallback = (): AppProfile => ({
-          id: userId,
-          email: emailVal,
-          nome: session?.user?.user_metadata?.nome || session?.user?.user_metadata?.full_name || (isMasterEmail ? 'Igor Carvalho' : 'Usuário'),
-          role: isMasterEmail ? 'master' : 'customer',
-          company_id: null,
-          organization_id: null,
-          avatar_url: null,
-          cargo: null,
-          created_at: null,
-          empresa: null,
-          telefone: null,
-          updated_at: null,
-          company: null,
-        });
-
-        if (!profileData) {
-          const defaultRole = isMasterEmail ? 'master' : 'customer';
-          const newProfile: AppProfile = {
-            ...buildFallback(),
-            role: defaultRole,
-          };
-
-          const { error: upsertErr } = await supabase.from("profiles").upsert(newProfile as never);
-          if (!upsertErr) {
-            console.log("[Auth] profile loaded");
-            return newProfile;
-          }
-        } else if (isMasterEmail && profileData.role !== 'master') {
-          await supabase.from("profiles").update({ role: 'master' as never }).eq('id', userId);
-          profileData.role = 'master';
+        if (!data) {
+          throw new Error("Perfil não encontrado.");
         }
 
         console.log("[Auth] profile loaded");
-        const fallback = buildFallback();
-        return profileData || fallback;
+        return data as unknown as AppProfile;
       } catch (err: any) {
         console.error("[Auth] profile error exception:", err?.message);
         throw err;
-      } finally {
-        // garante finalização
       }
     },
   });
@@ -206,24 +165,6 @@ export function useProfile() {
       } catch (err: any) {
         console.error("[Auth] membership error exception:", err?.message);
         return null;
-      } finally {
-        // garante finalização
-      }
-    },
-  });
-
-  const { data: lifetimeAdmin } = useQuery({
-    queryKey: ["lifetime-admin", userId],
-    enabled: !!userId,
-    retry: 1,
-    staleTime: 1000 * 60 * 5,
-    queryFn: async () => {
-      if (!userId) return false;
-      try {
-        const { data: ok } = await supabase.rpc("is_lifetime_admin", { _user_id: userId });
-        return !!ok;
-      } catch {
-        return false;
       }
     },
   });
@@ -231,9 +172,10 @@ export function useProfile() {
   const isLoading = sessionLoading || (!!userId && (profileLoading || membershipLoading) && !timeoutReached && !profile);
 
   const rawRole = (profile?.role || "").toLowerCase();
-  const isMaster = userEmail === 'igor.carvalho76@gmail.com' || rawRole === "master" || rawRole === "super_admin";
-  const isCustomer = rawRole === "customer" && !isMaster;
-  const isCommon = !isMaster && !isCustomer;
+  const memberRole = (membership?.role || "").toLowerCase();
+
+  const isOwner = rawRole === "owner" || memberRole === "owner";
+  const isUser = rawRole === "user";
 
   return {
     session,
@@ -247,12 +189,12 @@ export function useProfile() {
     pendingStep,
     refetch,
     isAuthenticated: !!session,
-    isMaster,
-    isCustomer,
-    isCommon,
-    isOwner: isMaster || rawRole === "owner" || membership?.role === "owner",
-    isUser: rawRole === "user",
-    isLifetimeAdmin: lifetimeAdmin === true,
-    isVitalicia: profile?.company?.subscription_status === 'vitalicia',
+    isMaster: isOwner,
+    isCustomer: isUser,
+    isCommon: isUser,
+    isOwner,
+    isUser,
+    isLifetimeAdmin: isOwner,
+    isVitalicia: false,
   };
 }
