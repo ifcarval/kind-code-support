@@ -71,7 +71,8 @@ function BillingPage() {
     e.preventDefault();
     const payload = {
       ...formData,
-      event_id: formData.event_id || null
+      event_id: formData.event_id || null,
+      due_date: formData.due_date ?? null
     };
 
     let res;
@@ -178,7 +179,7 @@ function BillingPage() {
                         {formatCurrency(item.amount)}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={item.status === 'paid' ? 'success' : item.status === 'pending' ? 'warning' : 'secondary'}>
+                        <Badge variant={item.status === 'paid' ? 'default' : item.status === 'pending' ? 'outline' : 'secondary'}>
                           {item.status}
                         </Badge>
                       </TableCell>

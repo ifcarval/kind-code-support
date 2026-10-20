@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
 import { useEvents, EventItem } from "@/hooks/use-events";
 import { useClients } from "@/hooks/use-clients";
@@ -127,7 +128,9 @@ function CalendarPage() {
       const payload = {
         ...formData,
         organization_id: orgId,
-        customer_id: formData.customer_id || null
+        customer_id: formData.customer_id || null,
+        start_date: formData.start_date ?? "",
+        end_date: formData.end_date ?? ""
       };
 
       let res;

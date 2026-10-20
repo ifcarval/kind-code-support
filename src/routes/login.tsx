@@ -35,7 +35,7 @@ function LoginPage() {
 
     const obviousPasswords = ["123456", "12345678", "password", "senha123", "admin123"];
     const lowerPwd = pwd.toLowerCase();
-    const firstName = fullName ? fullName.toLowerCase().trim().split(" ")[0] : "";
+    const firstName = fullName ? (fullName.toLowerCase().trim().split(" ")[0] ?? "") : "";
     const isObvious = obviousPasswords.includes(lowerPwd) || 
       (firstName.length > 2 && lowerPwd.includes(firstName)) ||
       lowerPwd.includes("santa") || lowerPwd.includes("felicidade");
@@ -72,7 +72,7 @@ function LoginPage() {
       return "Essa senha é muito óbvia e fácil de adivinhar. Escolha outra.";
     }
     if (name) {
-      const firstName = name.toLowerCase().trim().split(" ")[0];
+      const firstName = name.toLowerCase().trim().split(" ")[0] ?? "";
       if (firstName.length > 2 && lowerPwd.includes(firstName)) {
         return "A senha não pode conter seu nome.";
       }
@@ -201,15 +201,8 @@ function LoginPage() {
           email: email.trim(),
           nome: fullName.trim(),
           telefone: phone.trim(),
-          role: "customer"
+          role: "user"
         });
-
-        await supabase.from("clients").insert({
-          nome_razao_social: fullName.trim(),
-          email: email.trim(),
-          telefone: phone.trim(),
-          tipo_pessoa: "fisica"
-        }).select().maybeSingle();
       }
 
       toast.success("Conta criada com sucesso! Você já pode acessar.");

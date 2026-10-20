@@ -66,6 +66,7 @@ function ClientsGuard() {
 }
 
 function ClientsPage() {
+  const navigate = useNavigate();
   const { clients, loading, fetchClients, deleteClient, createClient, updateClient } = useClients();
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -221,15 +222,15 @@ function ClientsPage() {
                   {clients.map((client) => (
                     <TableRow key={client.id}>
                       <TableCell className="font-medium">
-                        <div>{client.nome_razao_social || client.name}</div>
-                        {(client.endereco || client.address) && (
-                          <div className="text-xs text-muted-foreground truncate max-w-xs">{client.endereco || client.address}</div>
+                        <div>{client.nome_razao_social}</div>
+                        {client.endereco && (
+                          <div className="text-xs text-muted-foreground truncate max-w-xs">{client.endereco}</div>
                         )}
                       </TableCell>
-                      <TableCell>{client.cpf_cnpj || client.document || "N/A"}</TableCell>
+                      <TableCell>{client.cpf_cnpj || "N/A"}</TableCell>
                       <TableCell>
                         <div className="text-sm">{client.email || "-"}</div>
-                        <div className="text-xs text-muted-foreground">{client.telefone || client.telefone_secundario || client.phone || client.whatsapp || "-"}</div>
+                        <div className="text-xs text-muted-foreground">{client.telefone || client.telefone_secundario || "-"}</div>
                       </TableCell>
                       <TableCell>{getStatusBadge(client.status)}</TableCell>
                       <TableCell className="text-right">

@@ -28,6 +28,7 @@ interface ClientEventContractData {
     released: boolean;
     fileUrl?: string;
     totalAmount?: number;
+    clauses?: string;
   } | null;
   payments: Array<{
     id: string;
@@ -64,14 +65,14 @@ function MeusContratosPage() {
       const userId = session.user.id;
 
       // Buscar cliente associado ao email ou user_id
-      let { data: clientData } = await supabase
+      let { data: clientData }: { data: any } = await supabase
         .from("clients" as any)
         .select("*")
         .eq("email", userEmail)
         .maybeSingle();
 
       if (!clientData) {
-        const { data: clientByUser } = await supabase
+        const { data: clientByUser }: { data: any } = await supabase
           .from("clients" as any)
           .select("*")
           .eq("user_id", userId)
@@ -90,7 +91,7 @@ function MeusContratosPage() {
       });
 
       // Buscar eventos do cliente
-      const { data: eventsData, error: eventsErr } = await supabase
+      const { data: eventsData, error: eventsErr }: { data: any; error: any } = await supabase
         .from("events" as any)
         .select("*")
         .eq("customer_id", clientData.id)
@@ -108,14 +109,14 @@ function MeusContratosPage() {
 
       for (const ev of eventsData) {
         // Buscar contrato do evento
-        const { data: contractData } = await supabase
+        const { data: contractData }: { data: any } = await supabase
           .from("contracts" as any)
           .select("*")
           .eq("event_id", ev.id)
           .maybeSingle();
 
         // Buscar pagamentos do evento
-        const { data: paymentsData } = await supabase
+        const { data: paymentsData }: { data: any } = await supabase
           .from("invoices" as any)
           .select("*")
           .eq("event_id", ev.id);
@@ -281,10 +282,10 @@ function MeusContratosPage() {
                             <p className="text-xs text-muted-foreground mt-0.5">Disponibilizado e liberado pelo salão</p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Button size="sm" variant="outline" onClick={() => handleViewContract(item.contract)} className="gap-1.5">
+                            <Button size="sm" variant="outline" onClick={() => handleViewContract(item.contract ?? null)} className="gap-1.5">
                               <Eye className="h-3.5 w-3.5" /> Visualizar
                             </Button>
-                            <Button size="sm" variant="outline" onClick={() => handleViewContract(item.contract)} className="gap-1.5">
+                            <Button size="sm" variant="outline" onClick={() => handleViewContract(item.contract ?? null)} className="gap-1.5">
                               <Download className="h-3.5 w-3.5" /> Baixar PDF
                             </Button>
                             <Button size="sm" variant="outline" onClick={handlePrint} className="gap-1.5">

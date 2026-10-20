@@ -1,6 +1,28 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+
+type AppProfile = {
+  id: string;
+  email: string;
+  nome: string;
+  role: string | null;
+  company_id: string | null;
+  organization_id: string | null;
+  avatar_url: string | null;
+  cargo: string | null;
+  created_at: string | null;
+  empresa: string | null;
+  full_name: string | null;
+  telefone: string | null;
+  updated_at: string | null;
+  company?: {
+    id: string;
+    name: string | null;
+    trial_ends_at: string | null;
+    subscription_status: string | null;
+  } | null;
+};
 
 export function useProfile() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -102,7 +124,7 @@ export function useProfile() {
       console.log("[AuthDiag] querying profile for userId:", userId);
       let { data, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select("*, company:companies(id, name, trial_ends_at, subscription_status)")
         .eq("id", userId)
         .maybeSingle();
 
@@ -110,27 +132,58 @@ export function useProfile() {
         console.error("[AuthDiag] profile query error:", error.message);
       }
 
-      if (!data) {
+      const profileData = data as unknown as AppProfile | null;
+
+      const buildFallback = (): AppProfile => ({
+        id: userId,
+        email: emailVal,
+        nome: session.user.user_metadata?.full_name || session.user.user_metadata?.nome || (isMasterEmail ? 'Igor Carvalho' : 'Usuário'),
+        role: isMasterEmail ? 'master' : 'customer',
+        company_id: null,
+        organization_id: null,
+        avatar_url: null,
+        cargo: null,
+        created_at: null,
+        empresa: null,
+        full_name: null,
+        telefone: null,
+        updated_at: null,
+        company: null,
+      });
+
+      if (!profileData) {
         console.log("[AuthDiag] profile not found, checking master privileges");
         const defaultRole = isMasterEmail ? 'master' : 'customer';
-        const newProfile = {
-          id: userId,
-          email: emailVal,
-          nome: session.user.user_metadata?.full_name || session.user.user_metadata?.nome || (isMasterEmail ? 'Igor Carvalho' : 'Usuário'),
-          role: defaultRole
+        const newProfile: AppProfile = {
+          ...buildFallback(),
+          role: defaultRole,
         };
-        
-        const { error: upsertErr } = await supabase.from("profiles").upsert(newProfile);
+
+        const { error: upsertErr } = await supabase.from("profiles").upsert(newProfile as never);
         if (!upsertErr) {
-          data = newProfile;
+          return newProfile;
         }
-      } else if (isMasterEmail && data.role !== 'master') {
-        await supabase.from("profiles").update({ role: 'master' }).eq('id', userId);
-        data.role = 'master';
+      } else if (isMasterEmail && profileData.role !== 'master') {
+        await supabase.from("profiles").update({ role: 'master' as never }).eq('id', userId);
+        profileData.role = 'master';
       }
 
-      console.log("[AuthDiag] profile found:", !!data);
-      return data || { id: userId, email: emailVal, role: isMasterEmail ? 'master' : 'customer', nome: 'Usuário' };
+      console.log("[AuthDiag] profile found:", !!profileData);
+      const fallback = buildFallback();
+      fallback.nome = 'Usuário';
+      return profileData || fallback;
+    },
+  });
+
+  const { data: lifetimeAdmin } = useQuery({
+    queryKey: ["lifetime-admin", session?.user?.id],
+    enabled: !!session?.user?.id,
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+    queryFn: async () => {
+      const userId = session.user!.id;
+      const { data: ok } = await supabase.rpc("is_lifetime_admin", { _user_id: userId });
+      return !!ok;
     },
   });
 
@@ -153,5 +206,9 @@ export function useProfile() {
     isMaster,
     isCustomer,
     isCommon,
+    isOwner: isMaster || rawRole === "owner",
+    isUser: rawRole === "user",
+    isLifetimeAdmin: lifetimeAdmin === true,
+    isVitalicia: profile?.company?.subscription_status === 'vitalicia',
   };
 }
