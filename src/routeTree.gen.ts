@@ -10,9 +10,19 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AgendamentosRouteImport } from './routes/agendamentos'
 import { Route as BillingRouteImport } from './routes/billing'
+import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as ContractedServicesRouteImport } from './routes/contracted-services'
+import { Route as ContractsRouteImport } from './routes/contracts'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DisponibilidadeRouteImport } from './routes/disponibilidade'
+import { Route as EventsRouteImport } from './routes/events'
+import { Route as LandlordsRouteImport } from './routes/landlords'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MeusContratosRouteImport } from './routes/meus-contratos'
+import { Route as MinhasSolicitacoesRouteImport } from './routes/minhas-solicitacoes'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
@@ -23,9 +33,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgendamentosRoute = AgendamentosRouteImport.update({
+  id: '/agendamentos',
+  path: '/agendamentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BillingRoute = BillingRouteImport.update({
   id: '/billing',
   path: '/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarRoute = CalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClientsRoute = ClientsRouteImport.update({
@@ -36,6 +56,46 @@ const ClientsRoute = ClientsRouteImport.update({
 const ContractedServicesRoute = ContractedServicesRouteImport.update({
   id: '/contracted-services',
   path: '/contracted-services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContractsRoute = ContractsRouteImport.update({
+  id: '/contracts',
+  path: '/contracts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DisponibilidadeRoute = DisponibilidadeRouteImport.update({
+  id: '/disponibilidade',
+  path: '/disponibilidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventsRoute = EventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LandlordsRoute = LandlordsRouteImport.update({
+  id: '/landlords',
+  path: '/landlords',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeusContratosRoute = MeusContratosRouteImport.update({
+  id: '/meus-contratos',
+  path: '/meus-contratos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MinhasSolicitacoesRoute = MinhasSolicitacoesRouteImport.update({
+  id: '/minhas-solicitacoes',
+  path: '/minhas-solicitacoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServicesRoute = ServicesRouteImport.update({
@@ -61,9 +121,19 @@ const ClientsIdRoute = ClientsIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/agendamentos': typeof AgendamentosRoute
   '/billing': typeof BillingRoute
+  '/calendar': typeof CalendarRoute
   '/clients': typeof ClientsRouteWithChildren
   '/contracted-services': typeof ContractedServicesRoute
+  '/contracts': typeof ContractsRoute
+  '/dashboard': typeof DashboardRoute
+  '/disponibilidade': typeof DisponibilidadeRoute
+  '/events': typeof EventsRoute
+  '/landlords': typeof LandlordsRoute
+  '/login': typeof LoginRoute
+  '/meus-contratos': typeof MeusContratosRoute
+  '/minhas-solicitacoes': typeof MinhasSolicitacoesRoute
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -71,9 +141,19 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/agendamentos': typeof AgendamentosRoute
   '/billing': typeof BillingRoute
+  '/calendar': typeof CalendarRoute
   '/clients': typeof ClientsRouteWithChildren
   '/contracted-services': typeof ContractedServicesRoute
+  '/contracts': typeof ContractsRoute
+  '/dashboard': typeof DashboardRoute
+  '/disponibilidade': typeof DisponibilidadeRoute
+  '/events': typeof EventsRoute
+  '/landlords': typeof LandlordsRoute
+  '/login': typeof LoginRoute
+  '/meus-contratos': typeof MeusContratosRoute
+  '/minhas-solicitacoes': typeof MinhasSolicitacoesRoute
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -82,9 +162,19 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/agendamentos': typeof AgendamentosRoute
   '/billing': typeof BillingRoute
+  '/calendar': typeof CalendarRoute
   '/clients': typeof ClientsRouteWithChildren
   '/contracted-services': typeof ContractedServicesRoute
+  '/contracts': typeof ContractsRoute
+  '/dashboard': typeof DashboardRoute
+  '/disponibilidade': typeof DisponibilidadeRoute
+  '/events': typeof EventsRoute
+  '/landlords': typeof LandlordsRoute
+  '/login': typeof LoginRoute
+  '/meus-contratos': typeof MeusContratosRoute
+  '/minhas-solicitacoes': typeof MinhasSolicitacoesRoute
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -94,9 +184,19 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/agendamentos'
     | '/billing'
+    | '/calendar'
     | '/clients'
     | '/contracted-services'
+    | '/contracts'
+    | '/dashboard'
+    | '/disponibilidade'
+    | '/events'
+    | '/landlords'
+    | '/login'
+    | '/meus-contratos'
+    | '/minhas-solicitacoes'
     | '/services'
     | '/settings'
     | '/admin/users'
@@ -104,9 +204,19 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/agendamentos'
     | '/billing'
+    | '/calendar'
     | '/clients'
     | '/contracted-services'
+    | '/contracts'
+    | '/dashboard'
+    | '/disponibilidade'
+    | '/events'
+    | '/landlords'
+    | '/login'
+    | '/meus-contratos'
+    | '/minhas-solicitacoes'
     | '/services'
     | '/settings'
     | '/admin/users'
@@ -114,9 +224,19 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/agendamentos'
     | '/billing'
+    | '/calendar'
     | '/clients'
     | '/contracted-services'
+    | '/contracts'
+    | '/dashboard'
+    | '/disponibilidade'
+    | '/events'
+    | '/landlords'
+    | '/login'
+    | '/meus-contratos'
+    | '/minhas-solicitacoes'
     | '/services'
     | '/settings'
     | '/admin/users'
@@ -125,9 +245,19 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AgendamentosRoute: typeof AgendamentosRoute
   BillingRoute: typeof BillingRoute
+  CalendarRoute: typeof CalendarRoute
   ClientsRoute: typeof ClientsRouteWithChildren
   ContractedServicesRoute: typeof ContractedServicesRoute
+  ContractsRoute: typeof ContractsRoute
+  DashboardRoute: typeof DashboardRoute
+  DisponibilidadeRoute: typeof DisponibilidadeRoute
+  EventsRoute: typeof EventsRoute
+  LandlordsRoute: typeof LandlordsRoute
+  LoginRoute: typeof LoginRoute
+  MeusContratosRoute: typeof MeusContratosRoute
+  MinhasSolicitacoesRoute: typeof MinhasSolicitacoesRoute
   ServicesRoute: typeof ServicesRoute
   SettingsRoute: typeof SettingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -142,11 +272,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agendamentos': {
+      id: '/agendamentos'
+      path: '/agendamentos'
+      fullPath: '/agendamentos'
+      preLoaderRoute: typeof AgendamentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/billing': {
       id: '/billing'
       path: '/billing'
       fullPath: '/billing'
       preLoaderRoute: typeof BillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clients': {
@@ -161,6 +305,62 @@ declare module '@tanstack/react-router' {
       path: '/contracted-services'
       fullPath: '/contracted-services'
       preLoaderRoute: typeof ContractedServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contracts': {
+      id: '/contracts'
+      path: '/contracts'
+      fullPath: '/contracts'
+      preLoaderRoute: typeof ContractsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/disponibilidade': {
+      id: '/disponibilidade'
+      path: '/disponibilidade'
+      fullPath: '/disponibilidade'
+      preLoaderRoute: typeof DisponibilidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/events': {
+      id: '/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof EventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/landlords': {
+      id: '/landlords'
+      path: '/landlords'
+      fullPath: '/landlords'
+      preLoaderRoute: typeof LandlordsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meus-contratos': {
+      id: '/meus-contratos'
+      path: '/meus-contratos'
+      fullPath: '/meus-contratos'
+      preLoaderRoute: typeof MeusContratosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/minhas-solicitacoes': {
+      id: '/minhas-solicitacoes'
+      path: '/minhas-solicitacoes'
+      fullPath: '/minhas-solicitacoes'
+      preLoaderRoute: typeof MinhasSolicitacoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/services': {
@@ -207,9 +407,19 @@ const ClientsRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AgendamentosRoute: AgendamentosRoute,
   BillingRoute: BillingRoute,
+  CalendarRoute: CalendarRoute,
   ClientsRoute: ClientsRouteWithChildren,
   ContractedServicesRoute: ContractedServicesRoute,
+  ContractsRoute: ContractsRoute,
+  DashboardRoute: DashboardRoute,
+  DisponibilidadeRoute: DisponibilidadeRoute,
+  EventsRoute: EventsRoute,
+  LandlordsRoute: LandlordsRoute,
+  LoginRoute: LoginRoute,
+  MeusContratosRoute: MeusContratosRoute,
+  MinhasSolicitacoesRoute: MinhasSolicitacoesRoute,
   ServicesRoute: ServicesRoute,
   SettingsRoute: SettingsRoute,
   AdminUsersRoute: AdminUsersRoute,
