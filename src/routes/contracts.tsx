@@ -65,13 +65,32 @@ function ContractsPage() {
   const [genDiscount, setGenDiscount] = useState(0);
   const [genSignal, setGenSignal] = useState(0);
   const [genDeposit, setGenDeposit] = useState(0);
-  const [genPaymentMethod, setGenPaymentMethod] = useState("PIX parcelado");
+  const [genPaymentMethod, setGenPaymentMethod] = useState("Pix");
   const [genInstallments, setGenInstallments] = useState(1);
   const [genVencimento, setGenVencimento] = useState(10);
+  const [genClauses, setGenClauses] = useState("");
 
   useEffect(() => {
     fetchTemplates();
   }, []);
+
+  // Ao selecionar um evento, carregar automaticamente valores
+  useEffect(() => {
+    if (genEventId) {
+      const ev = events.find(e => e.id === genEventId);
+      if (ev) {
+        if (ev.signal_value !== undefined && ev.signal_value !== null) {
+          setGenSignal(ev.signal_value);
+        }
+        if (ev.payment_method) {
+          setGenPaymentMethod(ev.payment_method);
+        }
+        if (ev.credit_installments) {
+          setGenInstallments(ev.credit_installments);
+        }
+      }
+    }
+  }, [genEventId, events]);
 
   const fetchTemplates = async () => {
     const { data, error } = await supabase.from("contract_templates" as any).select("*" ).order("created_at", { ascending: false });
@@ -96,8 +115,15 @@ function ContractsPage() {
       toast.error("Apenas o MASTER pode importar e gerenciar modelos de contrato.");
       return;
     }
+    const { data: { user } } = await supabase.auth.getUser();
+    let orgId = null;
+    if (user) {
+      const { data: mem } = await supabase.from('organization_members').select('organization_id').eq('user_id', user.id).maybeSingle();
+      if (mem) orgId = (mem as any).organization_id;
+    }
+
     const payload = {
-      organization_id: (await supabase.auth.getSession()).data.session?.user.id,
+      organization_id: orgId || user?.id,
       name: templateName,
       version: templateVersion,
       original_file_name: importedFileName,
@@ -122,23 +148,71 @@ function ContractsPage() {
       return;
     }
     setGenContractNumber(`CTR-${Math.floor(1000 + Math.random() * 9000)}`);
+    setGenDiscount(0);
+    setGenSignal(0);
+    setGenDeposit(0);
+    setGenEventId("");
+    setGenClauses("");
     setIsGenerateModalOpen(true);
   };
 
   const handleGenerateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!genEventId || !genTemplateId) {
-      toast.error("Selecione o evento e o modelo de contrato.");
-      return;
-    }
-
+    
     const selectedEvent = events.find(ev => ev.id === genEventId);
     const customer = customers.find(c => c.id === selectedEvent?.customer_id);
     const template = templates.find(t => t.id === genTemplateId);
 
+    // Validações antes de salvar (Obrigatórias)
     if (!selectedEvent) {
-      toast.error("Evento selecionado inválido.");
+      toast.error("Selecione um evento válido.");
       return;
+    }
+    if (!selectedEvent.customer_id || !customer) {
+      toast.error("Cliente não identificado no evento selecionado.");
+      return;
+    }
+    const customerName = customer.name || (customer as any).nome_razao_social;
+    if (!customerName) {
+      toast.error("Nome do Cliente é obrigatório.");
+      return;
+    }
+    if (!selectedEvent.start_date) {
+      toast.error("Data do Evento é obrigatória.");
+      return;
+    }
+    if (!selectedEvent.start_time) {
+      toast.error("Hora de Início do Evento é obrigatória.");
+      return;
+    }
+    if (selectedEvent.total_value === undefined || selectedEvent.total_value === null || selectedEvent.total_value <= 0) {
+      toast.error("Valor Total é obrigatório.");
+      return;
+    }
+    if (!genPaymentMethod) {
+      toast.error("Forma de Pagamento é obrigatória.");
+      return;
+    }
+
+    // Obter organization_id conforme as regras prioritárias
+    let organizationId = selectedEvent.organization_id;
+    if (!organizationId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: membership } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (membership && (membership as any).organization_id) {
+          organizationId = (membership as any).organization_id;
+        }
+      }
+    }
+
+    if (!organizationId) {
+      toast.error("Organização não identificada.");
+      throw new Error("Organização não identificada.");
     }
 
     const formatCurrency = (val: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
@@ -147,13 +221,13 @@ function ContractsPage() {
     const totalVal = selectedEvent.total_value || 0;
     const saldo = totalVal - genSignal;
 
-    let content = template?.prepared_content || "";
+    let content = template?.prepared_content || genClauses || "";
     const variables = {
-      cliente_nome: customer?.name || customer?.nome_razao_social || "Cliente Não Informado",
-      cliente_documento: customer?.document || customer?.cpf_cnpj || "000.000.000-00",
-      cliente_telefone: customer?.phone || customer?.telefone || "(00) 00000-0000",
-      cliente_email: customer?.email || "cliente@email.com",
-      cliente_endereco: "Endereço não informado",
+      cliente_nome: customerName,
+      cliente_documento: customer.document || (customer as any).cpf_cnpj || "000.000.000-00",
+      cliente_telefone: customer.phone || (customer as any).telefone || "(00) 00000-0000",
+      cliente_email: customer.email || "cliente@email.com",
+      cliente_endereco: (customer as any).address || (customer as any).endereco || "Endereço não informado",
       evento_titulo: selectedEvent.title,
       evento_tipo: selectedEvent.event_type || "Evento",
       evento_data_inicio: formatDate(selectedEvent.start_date),
@@ -178,47 +252,63 @@ function ContractsPage() {
       content = content.replace(regex, val);
     });
 
-    if (content.includes("{{") || content.includes("undefined") || content.includes("null")) {
-      toast.warning("Atenção: Existem campos obrigatórios ou marcadores não preenchidos.");
-    }
+    const finalClauses = genClauses ? `${genClauses}\n\n${content}` : content;
 
-    const orgId = selectedEvent.organization_id || (await supabase.auth.getSession()).data.session?.user.id;
+    const snapshotVariables = {
+      event_id: selectedEvent.id,
+      customer: {
+        id: customer.id,
+        name: customerName,
+        phone: customer.phone || (customer as any).telefone,
+        email: customer.email,
+        document: customer.document || (customer as any).cpf_cnpj
+      },
+      event: {
+        title: selectedEvent.title,
+        type: selectedEvent.event_type,
+        date: selectedEvent.start_date,
+        start_time: selectedEvent.start_time,
+        end_time: selectedEvent.end_time,
+        guests: selectedEvent.guests
+      },
+      financial: {
+        total_value: totalVal,
+        signal_value: genSignal,
+        deposit_value: genDeposit,
+        discount: genDiscount
+      },
+      payment: {
+        method: genPaymentMethod,
+        installments: genInstallments,
+        due_day: genVencimento
+      },
+      variables
+    };
 
     const payload = {
-      organization_id: orgId,
-      customer_id: selectedEvent.customer_id || null,
+      organization_id: organizationId,
+      customer_id: selectedEvent.customer_id ?? null,
       landlord_id: (selectedEvent as any).landlord_id ?? null,
       title: `Contrato - ${selectedEvent.title}`,
       status: 'draft',
       template_id: genTemplateId || null,
       released: false,
       contract_number: genContractNumber,
-      clauses: content ?? '',
-      snapshot_variables: {
-        event_id: selectedEvent.id,
-        event_title: selectedEvent.title,
-        event_date: selectedEvent.start_date,
-        payment_method: genPaymentMethod,
-        credit_installments: genInstallments,
-        total_value: totalVal,
-        signal_value: genSignal,
-        deposit_value: genDeposit,
-        discount: genDiscount,
-        installments: genInstallments,
-        due_day: genVencimento,
-        customer_name: customer?.name ?? (customer as any)?.nome_razao_social ?? null,
-        variables
-      }
+      clauses: finalClauses ?? '',
+      snapshot_variables: snapshotVariables
     };
 
-    console.log("PAYLOAD EXATO ENVIADO AO SUPABASE (contracts):", JSON.stringify(payload, null, 2));
-    toast.info("Payload gerado com sucesso. Verifique o console para detalhes.");
+    console.log("RELATÓRIO FINAL DE GERAÇÃO:");
+    console.log("- organization_id usado no contrato:", organizationId);
+    console.log("- event_id usado:", selectedEvent.id);
+    console.log("- customer_id usado:", selectedEvent.customer_id);
+    console.log("- payload enviado:", JSON.stringify(payload, null, 2));
 
     const res = await createContract(payload);
     if (res.error) {
       toast.error("Erro ao gerar contrato: " + res.error.message);
     } else {
-      toast.success("Contrato gerado com sucesso como rascunho!");
+      toast.success("Contrato gerado com sucesso!");
       setIsGenerateModalOpen(false);
     }
   };
@@ -240,13 +330,16 @@ function ContractsPage() {
 
   const formatCurrency = (val: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
 
+  const selectedEventObj = events.find(ev => ev.id === genEventId);
+  const selectedCustomerObj = customers.find(c => c.id === selectedEventObj?.customer_id);
+
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2"><FileText className="h-6 w-6" /> Gestão de Contratos e Modelos</h1>
-            <p className="text-sm text-muted-foreground">Importe modelos, revise cláusulas e gere contratos personalizados por evento.</p>
+            <p className="text-sm text-muted-foreground">Importe modelos, revise cláusulas e gere contratos profissionais de locação por evento.</p>
           </div>
           {isMaster && (
             <div className="flex gap-2 flex-wrap">
@@ -317,7 +410,7 @@ function ContractsPage() {
                       <TableCell className="font-medium">{item.contract_number}</TableCell>
                       <TableCell>{item.customer?.name || '-'}</TableCell>
                       <TableCell>{item.event?.title || '-'}</TableCell>
-                      <TableCell className="font-semibold">{formatCurrency(item.total_amount || 0)}</TableCell>
+                      <TableCell className="font-semibold">{formatCurrency(item.snapshot_variables?.financial?.total_amount || item.snapshot_variables?.financial?.total_value || item.total_amount || 0)}</TableCell>
                       <TableCell><Badge variant="outline">v{item.current_version}</Badge></TableCell>
                       <TableCell>
                         <Badge variant={item.status === 'active' || item.released ? 'default' : 'secondary'}>
@@ -391,78 +484,242 @@ function ContractsPage() {
           </DialogContent>
         </Dialog>
 
+        {/* TELA PROFISSIONAL DE GERAÇÃO DE CONTRATO (MODAL GRANDE EM COLUNAS) */}
         <Dialog open={isGenerateModalOpen} onOpenChange={setIsGenerateModalOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Gerar Contrato a Partir do Evento</DialogTitle>
-              <DialogDescription>Selecione o evento, o modelo ativo e confira os valores e condições antes de gerar o rascunho.</DialogDescription>
+              <DialogTitle className="text-xl font-bold">Cadastro Profissional de Contrato de Locação</DialogTitle>
+              <DialogDescription>Selecione um evento para carregar automaticamente o cliente, datas, horários e valores conforme as tabelas oficiais.</DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleGenerateSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Selecionar Evento</Label>
-                  <Select value={genEventId} onValueChange={setGenEventId} required>
-                    <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
-                    <SelectContent>
-                      {events.map(ev => (
-                        <SelectItem key={ev.id} value={ev.id}>{ev.title} ({ev.start_date})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Modelo Ativo</Label>
-                  <Select value={genTemplateId} onValueChange={setGenTemplateId} required>
-                    <SelectTrigger><SelectValue placeholder="Selecione o modelo" /></SelectTrigger>
-                    <SelectContent>
-                      {templates.map(t => (
-                        <SelectItem key={t.id} value={t.id}>{t.name} (v{t.version})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+
+            <form onSubmit={handleGenerateSubmit} className="space-y-6">
+              {/* SELEÇÃO DO EVENTO INICIAL */}
+              <div className="p-4 bg-muted/40 rounded-xl border space-y-3">
+                <Label className="text-base font-semibold text-primary">Selecione o Evento para Preenchimento Automático</Label>
+                <Select value={genEventId} onValueChange={setGenEventId} required>
+                  <SelectTrigger className="bg-card text-base font-medium py-3">
+                    <SelectValue placeholder="-- Escolha um evento cadastrado --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {events.map(ev => (
+                      <SelectItem key={ev.id} value={ev.id}>
+                        {ev.title} — Data: {ev.start_date} (Valor: {formatCurrency(ev.total_value || 0)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Número do Contrato</Label>
-                  <Input value={genContractNumber} onChange={(e) => setGenContractNumber(e.target.value)} required />
+              {/* LAYOUT EM DUAS COLUNAS */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* COLUNA ESQUERDA: CLIENTE E EVENTO */}
+                <div className="space-y-5">
+                  
+                  {/* SEÇÃO 2 — DADOS DO CLIENTE */}
+                  <div className="p-4 border rounded-xl bg-card space-y-3 shadow-sm">
+                    <h3 className="font-bold text-sm uppercase text-muted-foreground tracking-wider flex items-center gap-2">Dados do Cliente</h3>
+                    {selectedCustomerObj ? (
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="text-xs text-muted-foreground block">Nome do Cliente *</span>
+                          <span className="font-semibold text-base">{selectedCustomerObj.name || (selectedCustomerObj as any).nome_razao_social || "Não informado"}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-xs text-muted-foreground block">CPF / CNPJ</span>
+                            <span>{selectedCustomerObj.document || (selectedCustomerObj as any).cpf_cnpj || "Não informado"}</span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-muted-foreground block">Telefone</span>
+                            <span>{selectedCustomerObj.phone || (selectedCustomerObj as any).telefone || "Não informado"}</span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-xs text-muted-foreground block">E-mail</span>
+                            <span className="truncate block">{selectedCustomerObj.email || "Não informado"}</span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-muted-foreground block">Endereço</span>
+                            <span className="truncate block">{(selectedCustomerObj as any).address || (selectedCustomerObj as any).endereco || "Não informado"}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">Selecione um evento acima para carregar automaticamente o cliente.</p>
+                    )}
+                  </div>
+
+                  {/* SEÇÃO 3 — DADOS DO EVENTO */}
+                  <div className="p-4 border rounded-xl bg-card space-y-3 shadow-sm">
+                    <h3 className="font-bold text-sm uppercase text-muted-foreground tracking-wider">Dados do Evento</h3>
+                    {selectedEventObj ? (
+                      <div className="space-y-2 text-sm">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-xs text-muted-foreground block">Tipo do Evento</span>
+                            <span className="font-medium">{selectedEventObj.event_type || "Evento Geral"}</span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-muted-foreground block">Data do Evento *</span>
+                            <span className="font-semibold text-emerald-700">{selectedEventObj.start_date}</span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <span className="text-xs text-muted-foreground block">Início *</span>
+                            <span className="font-medium">{selectedEventObj.start_time || "14:00"}</span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-muted-foreground block">Término</span>
+                            <span className="font-medium">{selectedEventObj.end_time || "22:00"}</span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-muted-foreground block">Convidados</span>
+                            <span className="font-medium">{selectedEventObj.guests || 100}</span>
+                          </div>
+                        </div>
+                        {selectedEventObj.notes && (
+                          <div>
+                            <span className="text-xs text-muted-foreground block">Observações do Evento</span>
+                            <p className="text-xs bg-muted p-2 rounded mt-0.5">{selectedEventObj.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">Selecione um evento para carregar as informações.</p>
+                    )}
+                  </div>
+
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Forma de Pagamento Contratada</Label>
-                  <Input value={genPaymentMethod} onChange={(e) => setGenPaymentMethod(e.target.value)} placeholder="Ex: PIX parcelado" />
+
+                {/* COLUNA DIREITA: CONTRATO, VALORES E PAGAMENTO */}
+                <div className="space-y-5">
+
+                  {/* SEÇÃO 1 — DADOS DO CONTRATO */}
+                  <div className="p-4 border rounded-xl bg-card space-y-3 shadow-sm">
+                    <h3 className="font-bold text-sm uppercase text-muted-foreground tracking-wider">Seção 1 — Dados do Contrato</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Número do Contrato</Label>
+                        <Input value={genContractNumber} onChange={(e) => setGenContractNumber(e.target.value)} required />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Status Inicial</Label>
+                        <Input value="Rascunho" disabled className="bg-muted text-muted-foreground font-semibold" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Modelo do Contrato</Label>
+                        <Select value={genTemplateId} onValueChange={setGenTemplateId} required>
+                          <SelectTrigger><SelectValue placeholder="Selecione o modelo" /></SelectTrigger>
+                          <SelectContent>
+                            {templates.map(t => (
+                              <SelectItem key={t.id} value={t.id}>{t.name} (v{t.version})</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Data de Emissão</Label>
+                        <Input value={new Date().toLocaleDateString('pt-BR')} disabled className="bg-muted" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SEÇÃO 4 — VALORES DO CONTRATO */}
+                  <div className="p-4 border rounded-xl bg-card space-y-3 shadow-sm">
+                    <h3 className="font-bold text-sm uppercase text-muted-foreground tracking-wider">Seção 4 — Valores do Contrato</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Valor Total *</Label>
+                        <Input 
+                          value={formatCurrency(selectedEventObj?.total_value || 0)} 
+                          disabled 
+                          className="bg-muted font-bold text-primary"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Sinal / Entrada</Label>
+                        <CurrencyInput value={genSignal} onChange={setGenSignal} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Desconto (Editável)</Label>
+                        <CurrencyInput value={genDiscount} onChange={setGenDiscount} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Caução (Editável)</Label>
+                        <CurrencyInput value={genDeposit} onChange={setGenDeposit} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SEÇÃO 5 & 6 — FORMA DE PAGAMENTO E VENCIMENTO */}
+                  <div className="p-4 border rounded-xl bg-card space-y-3 shadow-sm">
+                    <h3 className="font-bold text-sm uppercase text-muted-foreground tracking-wider">Seção 5 & 6 — Pagamento e Vencimento</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Forma de Pagamento *</Label>
+                        <Select value={genPaymentMethod} onValueChange={setGenPaymentMethod} required>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
+                            <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
+                            <SelectItem value="Pix">Pix</SelectItem>
+                            <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                            <SelectItem value="Cheque">Cheque</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {genPaymentMethod === "Cartão de Crédito" ? (
+                        <div className="space-y-1">
+                          <Label className="text-xs">Número de Parcelas</Label>
+                          <Input 
+                            type="number" 
+                            min={1} 
+                            max={12} 
+                            value={genInstallments} 
+                            onChange={(e) => setGenInstallments(Number(e.target.value))} 
+                          />
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <Label className="text-xs">Dia de Vencimento</Label>
+                          <Input 
+                            type="number" 
+                            min={1} 
+                            max={31} 
+                            value={genVencimento} 
+                            onChange={(e) => setGenVencimento(Number(e.target.value))} 
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                 </div>
+
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Sinal Previsto</Label>
-                  <CurrencyInput value={genSignal} onChange={setGenSignal} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Caução Prevista</Label>
-                  <CurrencyInput value={genDeposit} onChange={setGenDeposit} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Desconto</Label>
-                  <CurrencyInput value={genDiscount} onChange={setGenDiscount} />
-                </div>
+              {/* SEÇÃO 7 — CLÁUSULAS / OBSERVAÇÕES */}
+              <div className="p-4 border rounded-xl bg-card space-y-2 shadow-sm">
+                <Label className="font-bold text-sm uppercase text-muted-foreground tracking-wider">Seção 7 — Cláusulas e Condições (Revisão)</Label>
+                <p className="text-xs text-muted-foreground">Você pode adicionar cláusulas adicionais específicas ou revisar o texto gerado pelo modelo selecionado antes de emitir o rascunho.</p>
+                <Textarea 
+                  rows={5}
+                  value={genClauses}
+                  onChange={(e) => setGenClauses(e.target.value)}
+                  placeholder="Insira cláusulas adicionais ou observações contratuais..."
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Número de Parcelas</Label>
-                  <Input type="number" value={genInstallments} onChange={(e) => setGenInstallments(Number(e.target.value))} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Dia de Vencimento</Label>
-                  <Input type="number" value={genVencimento} onChange={(e) => setGenVencimento(Number(e.target.value))} />
-                </div>
-              </div>
-
-              <DialogFooter>
+              <DialogFooter className="gap-2 pt-4 border-t">
                 <Button type="button" variant="outline" onClick={() => setIsGenerateModalOpen(false)}>Cancelar</Button>
-                <Button type="submit">Gerar Rascunho do Contrato</Button>
+                <Button type="submit" className="bg-primary font-bold px-6 shadow-md">Gerar Rascunho do Contrato</Button>
               </DialogFooter>
             </form>
           </DialogContent>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useProfile } from "./use-profile";
 
 export interface ContractItem {
   id: string;
@@ -23,6 +22,7 @@ export interface ContractItem {
   total_amount?: number | null;
   signed_manually?: boolean | null;
   signed_at?: string | null;
+  snapshot_variables?: any | null;
   customer?: { name: string } | null;
   event?: { title: string } | null;
 }
@@ -30,7 +30,6 @@ export interface ContractItem {
 export function useContractsManager() {
   const [contracts, setContracts] = useState<ContractItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const { profile } = useProfile();
 
   const fetchContracts = async () => {
     setLoading(true);
@@ -50,10 +49,30 @@ export function useContractsManager() {
   };
 
   const createContract = async (payload: Partial<ContractItem>) => {
-    const orgId = profile?.organization_id || (await supabase.auth.getSession()).data.session?.user.id;
+    // Validação obrigatória de organizationId conforme diretrizes
+    let orgId = payload.organization_id;
+    
+    if (!orgId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: membership } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (membership && (membership as any).organization_id) {
+          orgId = (membership as any).organization_id;
+        }
+      }
+    }
+
+    if (!orgId) {
+      throw new Error('Organização não identificada.');
+    }
+
     const dataToInsert = {
       ...payload,
-      organization_id: profile?.organization_id || orgId,
+      organization_id: orgId,
       contract_number: payload.contract_number || `CTR-${Math.floor(1000 + Math.random() * 9000)}`
     };
 
