@@ -27,7 +27,7 @@ export interface EventItem {
   signal_value?: number | null;
   notes?: string | null;
   payment_method?: string | null;
-  credit_installments?: string | null;
+  credit_installments?: number | null;
   created_at?: string;
   updated_at?: string;
   customer?: { nome_razao_social: string } | null;
@@ -83,10 +83,6 @@ export function useEvents() {
     }
 
     const orgId = (membership as any).organization_id;
-    console.log(
-      'organization_id enviado no evento:',
-      orgId
-    );
 
     return { organizationId: orgId, error: null };
   };

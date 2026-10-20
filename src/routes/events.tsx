@@ -49,7 +49,7 @@ function EventsPage() {
     total_value: 0,
     signal_value: 0,
     payment_method: "",
-    credit_installments: "1x",
+    credit_installments: 1,
     notes: ""
   });
 
@@ -73,7 +73,7 @@ function EventsPage() {
       total_value: 0,
       signal_value: 0,
       payment_method: "",
-      credit_installments: "1x",
+      credit_installments: 1,
       notes: ""
     });
     setIsModalOpen(true);
@@ -100,7 +100,7 @@ function EventsPage() {
       total_value: ev.total_value || 0,
       signal_value: ev.signal_value || 0,
       payment_method: ev.payment_method || "",
-      credit_installments: ev.credit_installments || "1x",
+      credit_installments: ev.credit_installments ? Number(ev.credit_installments) : 1,
       notes: ev.notes || ""
     });
     setIsModalOpen(true);
@@ -122,7 +122,7 @@ function EventsPage() {
       newErrors.total_value = "Valor Total é obrigatório.";
     }
     if (!formData.payment_method) newErrors.payment_method = "Forma de Pagamento é obrigatória.";
-    if (formData.payment_method === "Cartão de Crédito" && !formData.credit_installments) {
+    if (formData.payment_method === "Cartão de Crédito" && (!formData.credit_installments || formData.credit_installments < 1)) {
       newErrors.credit_installments = "Parcelamento é obrigatório para Cartão de Crédito.";
     }
     setErrors(newErrors);
@@ -176,7 +176,7 @@ function EventsPage() {
         total_value: formData.total_value,
         signal_value: formData.signal_value,
         payment_method: formData.payment_method,
-        credit_installments: formData.payment_method === "Cartão de Crédito" ? formData.credit_installments : null,
+        credit_installments: formData.payment_method === "Cartão de Crédito" ? Number(formData.credit_installments) : null,
         notes: formData.notes,
         organization_id: orgId
       };
@@ -284,7 +284,7 @@ function EventsPage() {
                       <TableCell>{format(new Date(ev.start_date + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                       <TableCell>{ev.guests || 0}</TableCell>
                       <TableCell>{formatCurrency(ev.total_value || 0)}</TableCell>
-                      <TableCell>{ev.payment_method || "N/A"} {ev.payment_method === "Cartão de Crédito" && ev.credit_installments ? `(${ev.credit_installments})` : ""}</TableCell>
+                      <TableCell>{ev.payment_method || "N/A"} {ev.payment_method === "Cartão de Crédito" && ev.credit_installments ? `(${ev.credit_installments}x)` : ""}</TableCell>
                       <TableCell>{getStatusBadge(ev.status)}</TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end gap-1">
@@ -491,7 +491,11 @@ function EventsPage() {
                   <Select 
                     value={formData.payment_method} 
                     onValueChange={(v) => {
-                      setFormData({...formData, payment_method: v});
+                      setFormData({
+                        ...formData,
+                        payment_method: v,
+                        credit_installments: v === "Cartão de Crédito" ? (formData.credit_installments || 1) : 1
+                      });
                       setErrors({...errors, payment_method: "", credit_installments: ""});
                     }}
                   >
@@ -514,15 +518,15 @@ function EventsPage() {
                   <div className="space-y-1.5">
                     <Label className="font-medium">Parcelado em quantas vezes? <span className="text-destructive">*</span></Label>
                     <Select 
-                      value={formData.credit_installments} 
-                      onValueChange={(v) => { setFormData({...formData, credit_installments: v}); setErrors({...errors, credit_installments: ""}); }}
+                      value={String(formData.credit_installments)} 
+                      onValueChange={(v) => { setFormData({...formData, credit_installments: parseInt(v) || 1}); setErrors({...errors, credit_installments: ""}); }}
                     >
                       <SelectTrigger className={errors.credit_installments ? "border-destructive" : ""}>
                         <SelectValue placeholder="Selecione as parcelas" />
                       </SelectTrigger>
                       <SelectContent>
-                        {["1x", "2x", "3x", "4x", "5x", "6x", "7x", "8x", "9x", "10x", "11x", "12x"].map(inst => (
-                          <SelectItem key={inst} value={inst}>{inst}</SelectItem>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
+                          <SelectItem key={num} value={String(num)}>{num}x</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -595,7 +599,7 @@ function EventsPage() {
                   <span className="text-muted-foreground">Forma de Pagamento:</span>
                   <span className="font-medium">
                     {selectedEvent.payment_method || "Não informado"}
-                    {selectedEvent.payment_method === "Cartão de Crédito" && selectedEvent.credit_installments ? ` (${selectedEvent.credit_installments})` : ""}
+                    {selectedEvent.payment_method === "Cartão de Crédito" && selectedEvent.credit_installments ? ` (${selectedEvent.credit_installments}x)` : ""}
                   </span>
                 </div>
                 {selectedEvent.notes && (
