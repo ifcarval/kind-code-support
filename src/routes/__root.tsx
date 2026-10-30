@@ -78,7 +78,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Salão Santa Felicidade" },
-      { name: "description", content: "Sistema de Gestão e Cobrança" },
+      { name: "description", content: "Gestão de eventos, reservas, contratos e disponibilidade do Salão Santa Felicidade." },
+      { name: "application-name", content: "Salão Santa Felicidade" },
+      { property: "og:title", content: "Salão Santa Felicidade" },
+      { property: "og:description", content: "Consulte disponibilidade e gerencie reservas e eventos do Salão Santa Felicidade." },
     ],
     links: [
       {
@@ -86,6 +89,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "canonical", href: "https://salaodefestaapp.lovable.app" },
     ],
   }),
   shellComponent: RootShell,
