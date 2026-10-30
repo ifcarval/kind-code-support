@@ -98,13 +98,43 @@ function LoginPage() {
   const [sessionLoading, setSessionLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session) {
-        navigate({ to: "/dashboard", replace: true });
-      } else {
-        setSessionLoading(false);
+    let mounted = true;
+
+    async function resolveExistingSession() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!mounted) return;
+
+        if (!session) {
+          setSessionLoading(false);
+          return;
+        }
+
+        const { data: userProfile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        if (!mounted) return;
+
+        const role = (userProfile?.role || "").toLowerCase();
+        navigate({
+          to: role === "user" ? "/meus-contratos" : "/dashboard",
+          replace: true,
+        });
+      } catch (error) {
+        console.error("[Login] Falha ao restaurar sessão:", error);
+        if (mounted) setSessionLoading(false);
       }
-    });
+    }
+
+    resolveExistingSession();
+
+    return () => {
+      mounted = false;
+    };
   }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
