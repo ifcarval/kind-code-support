@@ -112,9 +112,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   const userRoleLabel = isMaster ? "MASTER" : isCustomer ? "CLIENTE" : "COMUM";
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
       <aside className={cn(
-        "border-r bg-card transition-all duration-300 hidden md:flex flex-col sticky top-0 h-screen",
+        "border-r bg-card transition-all duration-300 hidden md:flex flex-col h-screen shrink-0",
         isSidebarCollapsed ? "w-20" : "w-64"
       )}>
         <div className={cn("p-6 border-b flex items-center shrink-0", isSidebarCollapsed ? "justify-center" : "justify-between")}>
@@ -158,8 +158,8 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b flex items-center justify-between px-6 bg-card shrink-0 sticky top-0 z-20">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        <header className="h-16 border-b flex items-center justify-between px-6 bg-card shrink-0 z-20">
           <div className="flex flex-col">
             <h2 className="text-lg font-semibold truncate leading-tight">{getPageTitle()}</h2>
           </div>
