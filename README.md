@@ -1,26 +1,64 @@
-# Happy Helper
+# Salão Santa Felicidade
 
-.
+Sistema de gestão do **Salão Santa Felicidade**, integrado ao Lovable e ao Supabase.
 
-This project was built with [Lovable](https://lovable.dev).
+**Aplicação oficial:** https://salaodefestaapp.lovable.app
 
-**Live app**: https://kind-code-support.lovable.app
+## Funcionalidades
 
-## Build with Lovable
+- consulta pública de disponibilidade;
+- solicitações e gestão de eventos;
+- cadastro de clientes;
+- calendário;
+- contratos;
+- financeiro;
+- área do cliente;
+- controle de acesso por perfil/organização.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/f9861be1-865b-44c0-a8cf-5c61f320c468).
+## Arquitetura
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+O projeto usa **React 19**, **TanStack Start/Router**, **Vite**, **Tailwind CSS** e **Supabase**.
 
-## Development
+A fonte oficial do projeto é este repositório. Alterações enviadas para a branch principal ficam disponíveis para sincronização com o projeto Lovable conectado.
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+## Segurança da disponibilidade pública
+
+A rota pública de agendamentos consulta somente os campos necessários para informar se uma data está livre ou ocupada. Dados internos do evento, como cliente, valores, observações e demais informações operacionais, não são solicitados por essa tela.
+
+> A proteção definitiva dos dados também deve ser mantida pelas políticas RLS do Supabase. Nunca utilize a service role key no frontend.
+
+## Desenvolvimento local
+
+Requisitos:
+
+- Node.js compatível com as dependências do projeto;
+- npm;
+- variáveis de ambiente do Supabase fornecidas pelo projeto Lovable/Supabase.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+git clone https://github.com/ifcarval/kind-code-support.git
+cd kind-code-support
+npm install
 npm run dev
 ```
+
+Para validar uma alteração antes da publicação:
+
+```sh
+npm run build
+npm run lint
+```
+
+## Publicação
+
+O domínio de referência é:
+
+```text
+https://salaodefestaapp.lovable.app
+```
+
+Ao alterar URLs de autenticação no Supabase, mantenha esse domínio entre os **Redirect URLs / Site URL** autorizados.
+
+## Observações
+
+Este projeto substitui o modelo antigo baseado em backend Node/MySQL do ZIP original. A versão atual utiliza a infraestrutura do Lovable + Supabase e deve ser preservada como base, incorporando apenas regras e fluxos necessários ao Salão Santa Felicidade.
