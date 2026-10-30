@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { useEvents } from "@/hooks/use-events";
+import { usePublicAvailability } from "@/hooks/use-public-availability";
 import { useProfile } from "@/hooks/use-profile";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -15,13 +15,13 @@ export const Route = createFileRoute("/agendamentos")({
 });
 
 function AgendamentosPublicPage() {
-  const { events, loading } = useEvents();
+  const { items: availability, loading } = usePublicAvailability();
   const { session } = useProfile();
   const navigate = useNavigate();
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   const getEventForDate = (d: Date) => {
-    return events.find(e => {
+    return availability.find(e => {
       try {
         const matchesDate = isSameDay(parseISO(e.start_date), d);
         const isNotCancelled = e.status !== 'CANCELLED';
