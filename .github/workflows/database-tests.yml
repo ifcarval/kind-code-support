@@ -1,0 +1,22 @@
+name: Supabase authorization tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  authorization:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Apply all migrations to an isolated database
+        run: supabase db start
+      - name: Run pgTAP authorization tests
+        run: supabase test db
