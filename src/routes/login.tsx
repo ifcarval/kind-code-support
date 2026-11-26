@@ -200,31 +200,20 @@ function LoginPage() {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
           data: {
             nome: fullName.trim(),
             full_name: fullName.trim(),
-            phone: phone.trim(),
-            role: "user"
+            phone: phone.trim()
           }
         }
       });
 
       if (error) {
         throw new Error(formatSupabaseError(error.message));
-      }
-
-      if (data.user) {
-        await supabase.from("profiles").upsert({
-          id: data.user.id,
-          email: email.trim(),
-          nome: fullName.trim(),
-          telefone: phone.trim(),
-          role: "user"
-        });
       }
 
       toast.success("Conta criada com sucesso! Você já pode acessar.");

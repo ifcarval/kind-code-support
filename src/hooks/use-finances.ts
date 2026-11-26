@@ -23,7 +23,7 @@ export interface FinanceItem {
 export function useFinances() {
   const [finances, setFinances] = useState<FinanceItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const { profile } = useProfile();
+  const { membership } = useProfile();
 
   const fetchFinances = async () => {
     setLoading(true);
@@ -43,10 +43,12 @@ export function useFinances() {
   };
 
   const createFinance = async (item: Partial<FinanceItem>) => {
-    const orgId = profile?.organization_id || (await supabase.auth.getSession()).data.session?.user.id;
+    if (!membership || membership.role !== 'owner') {
+      return { data: null, error: new Error('Organização administrativa não identificada.') };
+    }
     const payload = {
       ...item,
-      organization_id: profile?.organization_id || orgId
+      organization_id: membership.organization_id
     };
     const { data, error } = await supabase
       .from("finances" as any)

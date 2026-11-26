@@ -122,8 +122,13 @@ function ContractsPage() {
       if (mem) orgId = (mem as any).organization_id;
     }
 
+    if (!orgId) {
+      toast.error("Organização administrativa não identificada.");
+      return;
+    }
+
     const payload = {
-      organization_id: orgId || user?.id,
+      organization_id: orgId,
       name: templateName,
       version: templateVersion,
       original_file_name: importedFileName,
